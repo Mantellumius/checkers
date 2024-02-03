@@ -1,7 +1,9 @@
 use askama::Template;
 use serde::{Deserialize, Serialize};
 
-use crate::engine::Board;
+mod board_template;
+
+pub use board_template::BoardTemplate;
 
 #[derive(Deserialize, Template)]
 #[template(path = "pages/index.html")]
@@ -15,10 +17,4 @@ pub struct RoomTemplate {
     pub id: String,
     pub title: String,
     pub board: BoardTemplate,
-}
-
-#[derive(Deserialize, Template, Serialize, Default)]
-#[template(path = "components/board.html")]
-pub struct BoardTemplate {
-    pub board: Board,
 }

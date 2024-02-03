@@ -1,3 +1,5 @@
-mod room;
+mod games;
+mod rooms;
 
-pub use room::RoomRouter;
+pub use games::GamesRouter;
+pub use rooms::RoomsRouter;

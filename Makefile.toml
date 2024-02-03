@@ -10,8 +10,12 @@ args = ["watch", "--ignore", "data/*", "-x", "run"]
 [tasks.styles_watch]
 script = "npm run styles:watch"
 
+[tasks.install_modules]
+script = "npm i"
+
 [tasks.build_styles]
 script = "npm run styles"
+dependencies = ["install_modules"]
 
 [tasks.dev]
 run_task = { name = [
