@@ -1,0 +1,14 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}
+{{title}}
+{% endblock %}
+
+{% block head %}
+{% endblock %}
+
+{% block body %}
+<div class="flex items-center justify-center w-full h-full">
+    {{board|safe}}
+</div>
+{% endblock %}

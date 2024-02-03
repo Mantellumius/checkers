@@ -1,0 +1,27 @@
+<div class="flex flex-col w-fit h-fit border-4 border-gray-800">
+    {% for row in board.cells %}
+    <div class="flex">
+        {% set outer_loop_index = loop.index %}
+        {% for cell in row %}
+        <div class="{% if (loop.index + outer_loop_index) % 2 == 0 %}bg-white{% else %}bg-amber-700{% endif %} w-16 h-16
+        flex items-center justify-center text-green-500">
+            {% match cell %}
+            {% when crate::Checker::Black %}
+            <span class="bg-black rounded-full w-2/3 h-2/3">
+            </span>
+            {% when crate::Checker::White %}
+            <span class="bg-white rounded-full w-2/3 h-2/3">
+            </span>
+            {% when crate::Checker::BlackQueen %}
+            <div>
+                Black Queen
+            </div>
+            {% when crate::Checker::WhiteQueen %}
+            White Queen
+            {% when crate::Checker::Empty %}
+            {% endmatch %}
+        </div>
+        {% endfor%}
+    </div>
+    {% endfor%}
+</div>

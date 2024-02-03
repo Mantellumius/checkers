@@ -1,8 +1,15 @@
 use axum::{response::IntoResponse, routing::get, Router};
+use engine::Board;
+use serde::{Deserialize, Serialize};
 use std::env;
 
+mod engine;
+mod routes;
+mod store;
 mod templates;
 
+pub use engine::Checker;
+use routes::RoomRouter;
 use templates::IndexTemplate;
 use tower_http::services::ServeDir;
 
@@ -12,6 +19,7 @@ async fn main() {
     let public = ServeDir::new("public");
     let app = Router::new()
         .route("/", get(index))
+        .nest("/room", RoomRouter::get())
         .nest_service("/assets", public);
     let listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{port}"))
         .await
@@ -24,4 +32,11 @@ async fn index() -> impl IntoResponse {
     IndexTemplate {
         title: "Checkers".to_string(),
     }
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct Room {
+    name: String,
+    id: String,
+    board: Board,
 }
