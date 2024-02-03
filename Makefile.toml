@@ -1,0 +1,25 @@
+[env]
+PORT = 3000
+
+[tasks.run_watch]
+env = { "RUST_ENV" = "development", "PORT" = "${PORT}" }
+install_crate = "cargo-watch"
+command = "cargo"
+args = ["watch", "--ignore", "data/*", "-x", "run"]
+
+[tasks.styles_watch]
+script = "npm run styles:watch"
+
+[tasks.build_styles]
+script = "npm run styles"
+
+[tasks.dev]
+run_task = { name = [
+    "styles_watch",
+    "run_watch",
+], fork = true, parallel = true }
+
+[tasks.build]
+command = "cargo"
+args = ["build", "--release"]
+dependencies = ["build_styles"]
