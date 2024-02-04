@@ -10,6 +10,20 @@ pub enum Checker {
     BlackQueen,
 }
 
+impl Checker {
+    pub fn is_black(&self) -> bool {
+        matches!(self, Checker::Black | Checker::BlackQueen)
+    }
+
+    pub fn is_white(&self) -> bool {
+        matches!(self, Checker::White | Checker::WhiteQueen)
+    }
+
+    pub fn is_enemy(&self, other_checker: Checker) -> bool {
+        (self.is_black() && other_checker.is_white()) || (self.is_white() && other_checker.is_black())
+    }
+}
+
 impl Display for Checker {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

@@ -40,8 +40,9 @@ impl Board {
     }
 
     pub fn is_selected(&self, x: &usize, y: &usize) -> bool {
-        self.selected_cell
-            .map_or(false, |selected| selected.x == *x && selected.y == *y)
+        self.selected_cell.map_or(false, |selected| {
+            selected.x == *x as i8 && selected.y == *y as i8
+        })
     }
 
     pub fn iter(&self) -> BoardIterator {
@@ -54,9 +55,10 @@ impl Board {
 
     pub fn with_legal_moves(&self, point: Point) -> Self {
         let mut new_board = self.clear_moves();
-        let neighbours = new_board.get_empty_neighbours(point);
+        let empty_neighbors = new_board.get_empty_neighbours(point);
+        let captures = new_board.get_captures(point);
         let cell = *new_board.get_cell(point);
-        neighbours
+        empty_neighbors
             .into_iter()
             .filter(|neighbor_point| match cell {
                 Cell::Checker(Checker::White) => neighbor_point.y < point.y,
@@ -66,31 +68,80 @@ impl Board {
                 _ => false,
             })
             .for_each(|point| new_board.set_cell(point, Cell::Move));
+        captures
+            .into_iter()
+            .for_each(|point| new_board.set_cell(point, Cell::Capture));
         new_board.selected_cell = Some(point);
+        new_board
+    }
+
+    pub fn with_captures(&self, start: Point) -> Self {
+        let mut new_board = self.clear_moves();
+        new_board.selected_cell = Some(start);
+        let captures = self.get_captures(start);
+        captures
+            .into_iter()
+            .for_each(|point| new_board.set_cell(point, Cell::Move));
         new_board
     }
 
     pub fn make_move(&self, target: Point) -> Self {
         let mut new_board = self.clear_moves();
-        match self.selected_cell {
-            None => new_board,
-            Some(point) => {
-                let cell = *new_board.get_cell(point);
-                new_board.set_cell(point, Cell::Empty);
-                new_board.set_cell(target, cell);
-                new_board.selected_cell = None;
-                new_board.turn = new_board.turn.next();
-                new_board
+        let target_cell = *new_board.get_cell(target);
+        if let Some(point) = self.selected_cell {
+            let cell = *new_board.get_cell(point);
+            match target_cell {
+                Cell::Move => {
+                    new_board.set_cell(point, Cell::Empty);
+                    new_board.set_cell(target, cell);
+                }
+                Cell::Capture => {
+                    new_board.set_cell(point, Cell::Empty);
+                    new_board.set_cell(target, cell);
+                }
+                _ => {}
             }
+            new_board.turn = new_board.turn.next();
+            new_board.selected_cell = None;
         }
+        new_board
+    }
+
+    fn get_captures(&self, start: Point) -> Vec<Point> {
+        let mut new_board = self.clear_moves();
+        new_board.selected_cell = Some(start);
+        let mut result = vec![];
+        let mut captures = vec![start];
+        while let Some(capture_point) = captures.pop() {
+            let enemy_neighbors = new_board
+                .make_move(capture_point)
+                .get_enemy_neighbours(capture_point);
+            enemy_neighbors.into_iter().for_each(|neighbour_point| {
+                let delta = neighbour_point.subtract(&capture_point);
+                let point_behind_enemy = neighbour_point.add(&delta);
+                if point_behind_enemy.valid() && new_board.get_cell(point_behind_enemy).is_empty() {
+                    new_board.set_cell(point_behind_enemy, Cell::Move);
+                    captures.push(point_behind_enemy);
+                    result.push(point_behind_enemy);
+                }
+            });
+        }
+        result
     }
 
     fn set_cell(&mut self, target: Point, cell: Cell) {
-        self.cells[target.y][target.x] = cell;
+        self.cells[target.y as usize][target.x as usize] = cell;
     }
 
     fn get_cell(&self, point: Point) -> &Cell {
-        &self.cells[point.y][point.x]
+        &self.cells[point.y as usize][point.x as usize]
+    }
+
+    fn get_enemy_neighbours(&self, point: Point) -> Vec<Point> {
+        let cell = self.get_cell(point);
+        self.get_neighbours(point)
+            .filter(|neighbour_point| self.get_cell(*neighbour_point).is_enemy(*cell))
+            .collect()
     }
 
     fn get_empty_neighbours(&self, point: Point) -> Vec<Point> {
@@ -103,9 +154,7 @@ impl Board {
         let mut new_board = self.clone();
         self.iter()
             .filter(|(.., cell)| cell.is_move())
-            .for_each(|(point, ..)| {
-                new_board.set_cell(point, Cell::Empty);
-            });
+            .for_each(|(point, ..)| new_board.set_cell(point, Cell::Empty));
         new_board
     }
 
@@ -130,8 +179,8 @@ impl Board {
 
 pub struct BoardIterator<'a> {
     board: &'a Board,
-    x: usize,
-    y: usize,
+    x: i8,
+    y: i8,
 }
 
 impl<'a> Iterator for BoardIterator<'a> {

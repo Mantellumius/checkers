@@ -8,6 +8,7 @@ use crate::Checker;
 pub enum Cell {
     Empty,
     Move,
+    Capture,
     Checker(Checker),
 }
 
@@ -21,7 +22,14 @@ impl Cell {
     }
 
     pub fn is_move(&self) -> bool {
-        matches!(self, Cell::Move)
+        matches!(self, Cell::Move | Cell::Capture)
+    }
+
+    pub fn is_enemy(&self, other_cell: Cell) -> bool {
+        match (self, other_cell) {
+            (Cell::Checker(checker), Cell::Checker(other_checker)) => checker.is_enemy(other_checker),
+            _ => false,
+        }
     }
 }
 
@@ -30,6 +38,7 @@ impl Display for Cell {
         match self {
             Cell::Empty => write!(f, " "),
             Cell::Move => write!(f, "M"),
+            Cell::Capture => write!(f, "C"),
             Cell::Checker(checker) => write!(f, "{:?}", checker),
         }
     }

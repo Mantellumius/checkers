@@ -8,7 +8,14 @@
 {% endblock %}
 
 {% block body %}
-<div class="flex items-center justify-center w-full h-full">
-    {{board|safe}}
+<div id="room" class="w-full h-full flex">
+    <div class="flex items-center justify-center w-full h-full">
+        {{board|safe}}
+    </div>
+    <div class="flex absolute left-20 top-1/2">
+        <button hx-post="/rooms/{{id}}/reset" hx-trigger="click" hx-target="#room">
+            Reset
+        </button>
+    </div>
 </div>
 {% endblock %}
