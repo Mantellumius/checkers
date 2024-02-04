@@ -103,7 +103,7 @@ impl Board {
         new_board
     }
 
-    pub fn capture(&self, target: Point) -> Self {
+    fn capture(&self, target: Point) -> Self {
         let mut new_board = self.clone();
         if let Some(selected_cell) = new_board.selected_cell {
             let cell = *new_board.get_cell(selected_cell);
@@ -120,8 +120,6 @@ impl Board {
                     new_board.set_cell(*curr, cell);
                     curr
                 });
-            new_board.turn = new_board.turn.next();
-            new_board.selected_cell = None;
         }
         new_board
     }
