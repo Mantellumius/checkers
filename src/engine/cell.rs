@@ -25,7 +25,7 @@ impl Cell {
         matches!(self, Cell::Move | Cell::Capture)
     }
 
-    pub fn is_enemy(&self, other_cell: Cell) -> bool {
+    pub fn is_enemy(&self, other_cell: &Cell) -> bool {
         match (self, other_cell) {
             (Cell::Checker(checker), Cell::Checker(other_checker)) => checker.is_enemy(other_checker),
             _ => false,

@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::fmt::Display;
+use std::{fmt::Display, vec};
 
 use crate::utility::{FindAndRemove, Point, Shift};
 
@@ -9,7 +9,7 @@ use super::{Cell, Checker, Route, Turn};
 pub struct Board {
     pub cells: [[Cell; 8]; 8],
     pub turn: Turn,
-    pub selected_cell: Option<Point>,
+    pub selected_point: Option<Point>,
 }
 
 impl Default for Board {
@@ -17,7 +17,7 @@ impl Default for Board {
         Self {
             cells: [[Cell::Empty; 8]; 8],
             turn: Turn::White,
-            selected_cell: None,
+            selected_point: None,
         }
     }
 }
@@ -40,7 +40,7 @@ impl Board {
     }
 
     pub fn is_selected(&self, x: &usize, y: &usize) -> bool {
-        self.selected_cell.map_or(false, |selected| {
+        self.selected_point.map_or(false, |selected| {
             selected.x == *x as i8 && selected.y == *y as i8
         })
     }
@@ -56,37 +56,63 @@ impl Board {
     pub fn with_legal_moves(&self, point: Point) -> Self {
         let mut board = self.clear_moves();
         let cell = *board.get_cell(point);
-        board.selected_cell = Some(point);
-
-        board
-            .get_empty_neighbours(point)
-            .into_iter()
-            .filter(|neighbor_point| match cell {
-                Cell::Checker(Checker::White) => neighbor_point.y < point.y,
-                Cell::Checker(Checker::Black) => neighbor_point.y > point.y,
-                Cell::Checker(Checker::BlackQueen) => true,
-                Cell::Checker(Checker::WhiteQueen) => true,
-                _ => false,
-            })
-            .for_each(|point| board.set_cell(point, Cell::Move));
-        board
-            .get_captures(point)
-            .into_iter()
-            .map(|route| route.get_after_last())
-            .filter(|route| !route.is_empty())
-            .for_each(|route| {
-                route
-                    .iter()
-                    .for_each(|point| board.set_cell(*point, Cell::Move));
-                board.set_cell(*route.last().unwrap(), Cell::Capture);
-            });
+        board.selected_point = Some(point);
+        if cell.is_queen() {
+            board
+                .get_neighbours_queen(point)
+                .into_iter()
+                .filter(|point| self.get_cell(*point).is_empty())
+                .filter(|neighbor_point| match cell {
+                    Cell::Checker(Checker::White) => neighbor_point.y < point.y,
+                    Cell::Checker(Checker::Black) => neighbor_point.y > point.y,
+                    Cell::Checker(Checker::BlackQueen) => true,
+                    Cell::Checker(Checker::WhiteQueen) => true,
+                    _ => false,
+                })
+                .for_each(|point| board.set_cell(point, Cell::Move));
+            board
+                .get_captures(point)
+                .into_iter()
+                .map(|route| route.get_after_last())
+                .filter(|route| !route.is_empty())
+                .for_each(|route| {
+                    // route
+                    //     .iter()
+                    //     .for_each(|point| board.set_cell(*point, Cell::Move));
+                    board.set_cell(*route.last().unwrap(), Cell::Capture);
+                });
+        } else {
+            board
+                .get_neighbours(point)
+                .into_iter()
+                .filter(|point| self.get_cell(*point).is_empty())
+                .filter(|neighbor_point| match cell {
+                    Cell::Checker(Checker::White) => neighbor_point.y < point.y,
+                    Cell::Checker(Checker::Black) => neighbor_point.y > point.y,
+                    Cell::Checker(Checker::BlackQueen) => true,
+                    Cell::Checker(Checker::WhiteQueen) => true,
+                    _ => false,
+                })
+                .for_each(|point| board.set_cell(point, Cell::Move));
+            board
+                .get_captures(point)
+                .into_iter()
+                .map(|route| route.get_after_last())
+                .filter(|route| !route.is_empty())
+                .for_each(|route| {
+                    // route
+                    //     .iter()
+                    //     .for_each(|point| board.set_cell(*point, Cell::Move));
+                    board.set_cell(*route.last().unwrap(), Cell::Capture);
+                });
+        }
         board
     }
 
     pub fn make_move(&self, target: Point) -> Self {
         let target_cell = *self.get_cell(target);
         let mut board = self.clear_moves();
-        if let Some(start) = self.selected_cell {
+        if let Some(start) = self.selected_point {
             let cell = *board.get_cell(start);
             match target_cell {
                 Cell::Move => {
@@ -98,14 +124,18 @@ impl Board {
                 _ => {}
             }
             board.turn = board.turn.next();
-            board.selected_cell = None;
+            board.selected_point = None;
         }
         board
     }
 
+    fn selected_cell(&self) -> Option<Cell> {
+        self.selected_point.map(|point| *self.get_cell(point))
+    }
+
     fn capture(&self, target: Point) -> Self {
         let mut board = self.clone();
-        if let Some(selected_cell) = board.selected_cell {
+        if let Some(selected_cell) = board.selected_point {
             let cell = *board.get_cell(selected_cell);
             board
                 .get_captures(selected_cell)
@@ -134,7 +164,7 @@ impl Board {
 
     fn get_captures(&self, start: Point) -> Vec<Route> {
         let mut board = self.clear_moves();
-        board.selected_cell = Some(start);
+        board.selected_point = Some(start);
         let mut result = vec![Route {
             points: vec![start],
         }];
@@ -179,14 +209,60 @@ impl Board {
     fn get_enemy_neighbours(&self, point: Point) -> Vec<Point> {
         let cell = self.get_cell(point);
         self.get_neighbours(point)
-            .filter(|neighbour_point| self.get_cell(*neighbour_point).is_enemy(*cell))
+            .into_iter()
+            .filter(|neighbour_point| self.get_cell(*neighbour_point).is_enemy(cell))
             .collect()
     }
 
-    fn get_empty_neighbours(&self, point: Point) -> Vec<Point> {
+    fn get_enemy_neighbours_queen(&self, point: Point) -> Vec<Point> {
+        let cell = self.get_cell(point);
         self.get_neighbours(point)
-            .filter(|point| self.get_cell(*point).is_empty())
+            .into_iter()
+            .filter(|neighbour_point| self.get_cell(*neighbour_point).is_enemy(cell))
             .collect()
+    }
+
+    fn get_neighbours(&self, point: Point) -> Vec<Point> {
+        let deltas = vec![
+            Point::new(-1, -1),
+            Point::new(-1, 1),
+            Point::new(1, -1),
+            Point::new(1, 1),
+        ];
+        deltas
+            .into_iter()
+            .map(|delta| delta.add(&point))
+            .filter(|point| point.valid())
+            .collect()
+    }
+
+    fn get_neighbours_queen(&self, point: Point) -> Vec<Point> {
+        let mut result = vec![];
+        let mut points = [point, point, point, point];
+        let mut finished = [false, false, false, false];
+        let deltas = [
+            Point::new(-1, -1),
+            Point::new(-1, 1),
+            Point::new(1, -1),
+            Point::new(1, 1),
+        ];
+        while points.iter().any(|delta| delta.valid()) {
+            for i in 0..=3 {
+                points[i] = points[i].add(&deltas[i]);
+                if finished[i] || !points[i].valid() {
+                    continue;
+                }
+                if self.get_cell(points[i]).is_empty() {
+                    result.push(points[i]);
+                } else if self.get_cell(points[i]).is_enemy(&self.selected_cell().unwrap()) {
+                    result.push(points[i]);
+                    finished[i] = true;
+                } else {
+                    finished[i] = true;
+                }
+            }
+        }
+        result
     }
 
     fn clear_moves(&self) -> Board {
@@ -195,24 +271,6 @@ impl Board {
             .filter(|(.., cell)| cell.is_move())
             .for_each(|(point, ..)| board.set_cell(point, Cell::Empty));
         board
-    }
-
-    fn get_neighbours(&self, point: Point) -> impl Iterator<Item = Point> {
-        let mut neighbours = vec![];
-        let Point { x, y } = point;
-        if y > 0 && x > 0 {
-            neighbours.push(Point { x: x - 1, y: y - 1 });
-        }
-        if y < 7 && x > 0 {
-            neighbours.push(Point { x: x - 1, y: y + 1 });
-        }
-        if y > 0 && x < 7 {
-            neighbours.push(Point { x: x + 1, y: y - 1 });
-        }
-        if y < 7 && x < 7 {
-            neighbours.push(Point { x: x + 1, y: y + 1 });
-        }
-        neighbours.into_iter()
     }
 }
 

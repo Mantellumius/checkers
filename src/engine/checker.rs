@@ -19,7 +19,7 @@ impl Checker {
         matches!(self, Checker::White | Checker::WhiteQueen)
     }
 
-    pub fn is_enemy(&self, other_checker: Checker) -> bool {
+    pub fn is_enemy(&self, other_checker: &Checker) -> bool {
         (self.is_black() && other_checker.is_white())
             || (self.is_white() && other_checker.is_black())
     }
