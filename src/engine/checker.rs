@@ -20,7 +20,16 @@ impl Checker {
     }
 
     pub fn is_enemy(&self, other_checker: Checker) -> bool {
-        (self.is_black() && other_checker.is_white()) || (self.is_white() && other_checker.is_black())
+        (self.is_black() && other_checker.is_white())
+            || (self.is_white() && other_checker.is_black())
+    }
+
+    pub fn promote(&self) -> Self {
+        match self {
+            Checker::White => Checker::WhiteQueen,
+            Checker::Black => Checker::BlackQueen,
+            _ => *self,
+        }
     }
 }
 

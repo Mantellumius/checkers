@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
-use crate::utility::Point;
+use crate::utility::{FindAndRemove, Point, Shift};
 
-use super::{Cell, Checker, Turn};
+use super::{Cell, Checker, Route, Turn};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Board {
@@ -55,10 +55,11 @@ impl Board {
 
     pub fn with_legal_moves(&self, point: Point) -> Self {
         let mut new_board = self.clear_moves();
-        let empty_neighbors = new_board.get_empty_neighbours(point);
-        let captures = new_board.get_captures(point);
         let cell = *new_board.get_cell(point);
-        empty_neighbors
+        new_board.selected_cell = Some(point);
+
+        new_board
+            .get_empty_neighbours(point)
             .into_iter()
             .filter(|neighbor_point| match cell {
                 Cell::Checker(Checker::White) => neighbor_point.y < point.y,
@@ -68,26 +69,24 @@ impl Board {
                 _ => false,
             })
             .for_each(|point| new_board.set_cell(point, Cell::Move));
-        captures
-            .into_iter()
-            .for_each(|point| new_board.set_cell(point, Cell::Capture));
-        new_board.selected_cell = Some(point);
         new_board
-    }
-
-    pub fn with_captures(&self, start: Point) -> Self {
-        let mut new_board = self.clear_moves();
-        new_board.selected_cell = Some(start);
-        let captures = self.get_captures(start);
-        captures
+            .get_captures(point)
             .into_iter()
-            .for_each(|point| new_board.set_cell(point, Cell::Move));
+            .map(|route| route.get_after_last())
+            .filter(|route| !route.is_empty())
+            .for_each(|route| {
+                route
+                    .iter()
+                    .for_each(|point| new_board.set_cell(*point, Cell::Move));
+                new_board.set_cell(*route.last().unwrap(), Cell::Capture);
+            });
         new_board
     }
 
     pub fn make_move(&self, target: Point) -> Self {
+        dbg!(self.selected_cell);
+        let target_cell = *self.get_cell(target);
         let mut new_board = self.clear_moves();
-        let target_cell = *new_board.get_cell(target);
         if let Some(point) = self.selected_cell {
             let cell = *new_board.get_cell(point);
             match target_cell {
@@ -95,10 +94,7 @@ impl Board {
                     new_board.set_cell(point, Cell::Empty);
                     new_board.set_cell(target, cell);
                 }
-                Cell::Capture => {
-                    new_board.set_cell(point, Cell::Empty);
-                    new_board.set_cell(target, cell);
-                }
+                Cell::Capture => new_board = new_board.capture(target),
                 _ => {}
             }
             new_board.turn = new_board.turn.next();
@@ -107,23 +103,60 @@ impl Board {
         new_board
     }
 
-    fn get_captures(&self, start: Point) -> Vec<Point> {
+    pub fn capture(&self, target: Point) -> Self {
+        let mut new_board = self.clone();
+        if let Some(selected_cell) = new_board.selected_cell {
+            let cell = *new_board.get_cell(selected_cell);
+            new_board
+                .get_captures(selected_cell)
+                .into_iter()
+                .find(|route| *route.last().unwrap() == target)
+                .unwrap_or_default()
+                .iter()
+                .reduce(|prev, curr| {
+                    let delta = curr.subtract(prev).divide(2);
+                    new_board.set_cell(*prev, Cell::Empty);
+                    new_board.set_cell(prev.add(&delta), Cell::Empty);
+                    new_board.set_cell(*curr, cell);
+                    curr
+                });
+            new_board.turn = new_board.turn.next();
+            new_board.selected_cell = None;
+        }
+        new_board
+    }
+
+    fn get_captures(&self, start: Point) -> Vec<Route> {
         let mut new_board = self.clear_moves();
         new_board.selected_cell = Some(start);
-        let mut result = vec![];
+        let mut result = vec![Route {
+            points: vec![start],
+        }];
         let mut captures = vec![start];
-        while let Some(capture_point) = captures.pop() {
-            let enemy_neighbors = new_board
+        while let Some(capture_point) = captures.shift() {
+            let valid_captures: Vec<Point> = new_board
                 .make_move(capture_point)
-                .get_enemy_neighbours(capture_point);
-            enemy_neighbors.into_iter().for_each(|neighbour_point| {
-                let delta = neighbour_point.subtract(&capture_point);
-                let point_behind_enemy = neighbour_point.add(&delta);
-                if point_behind_enemy.valid() && new_board.get_cell(point_behind_enemy).is_empty() {
-                    new_board.set_cell(point_behind_enemy, Cell::Move);
-                    captures.push(point_behind_enemy);
-                    result.push(point_behind_enemy);
-                }
+                .get_enemy_neighbours(capture_point)
+                .into_iter()
+                .map(|neighbour_point| {
+                    let delta = neighbour_point.subtract(&capture_point);
+                    neighbour_point.add(&delta)
+                })
+                .filter(|point_behind_enemy| {
+                    point_behind_enemy.valid() && new_board.get_cell(*point_behind_enemy).is_empty()
+                })
+                .collect();
+
+            if valid_captures.is_empty() {
+                continue;
+            }
+            let route = result
+                .find_and_remove(|route| *route.last().unwrap() == capture_point)
+                .unwrap();
+            valid_captures.into_iter().for_each(|point_behind_enemy| {
+                new_board.set_cell(point_behind_enemy, Cell::Move);
+                captures.push(point_behind_enemy);
+                result.push(route.add_point(point_behind_enemy));
             });
         }
         result
