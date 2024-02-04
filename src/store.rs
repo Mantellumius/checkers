@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs};
 
-use crate::{Room};
+use crate::{engine::Board, Room};
 
 pub struct Store {}
 
@@ -9,8 +9,9 @@ const PATH: &str = "data/rooms.json";
 impl Store {
     pub fn get_rooms() -> HashMap<String, Room> {
         match fs::read_to_string(PATH) {
-            Ok(data) => serde_json::from_str::<HashMap<String, Room>>(&data)
-                .expect("Failed to parse json"),
+            Ok(data) => {
+                serde_json::from_str::<HashMap<String, Room>>(&data).expect("Failed to parse json")
+            }
             Err(_) => HashMap::new(),
         }
     }
@@ -27,6 +28,13 @@ impl Store {
     pub fn insert_room(id: String, room: Room) {
         let mut rooms = Self::get_rooms();
         rooms.insert(id, room);
+        fs::write(PATH, serde_json::to_string_pretty(&rooms).unwrap())
+            .expect("Can't write to file");
+    }
+    
+    pub fn update_board(id: String, board: Board) {
+        let mut rooms = Self::get_rooms();
+        rooms.get_mut(&id).unwrap().board = board;
         fs::write(PATH, serde_json::to_string_pretty(&rooms).unwrap())
             .expect("Can't write to file");
     }

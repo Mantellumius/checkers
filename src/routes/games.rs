@@ -3,30 +3,48 @@ use std::collections::HashMap;
 use askama_axum::IntoResponse;
 use axum::{
     extract::{Path, Query},
-    routing::get,
+    routing::{get, post},
     Router,
 };
 
-use crate::{store::Store, templates::BoardTemplate};
+use crate::{store::Store, templates::BoardTemplate, utility::Point, Room};
 
 pub struct GamesRouter {}
 
 impl GamesRouter {
     pub fn get() -> Router {
         Router::new().nest(
-            "/:id/moves",
-            Router::new().route("/", get(Self::get_legal_moves)),
+            "/:id",
+            Router::new()
+                .route("/moves", get(Self::get_legal_moves))
+                .route("/make_move", post(Self::make_move)),
         )
     }
 
-    pub async fn get_legal_moves(
+    async fn get_legal_moves(
         Path(id): Path<String>,
         Query(mut query): Query<HashMap<String, usize>>,
     ) -> impl IntoResponse {
         let room = Store::get_room(id).unwrap();
         let x = query.remove("x").unwrap();
         let y = query.remove("y").unwrap();
-        let new_board = room.board.with_legal_moves(x, y);
+        let new_board = room.board.with_legal_moves(Point { x, y });
+        Store::update_board(room.id.clone(), new_board.clone());
+        BoardTemplate {
+            id: room.id,
+            board: new_board,
+        }
+    }
+
+    async fn make_move(
+        Path(id): Path<String>,
+        Query(mut query): Query<HashMap<String, usize>>,
+    ) -> impl IntoResponse {
+        let room = Store::get_room(id).unwrap();
+        let x = query.remove("x").unwrap();
+        let y = query.remove("y").unwrap();
+        let new_board = room.board.make_move(Point { x, y });
+        Store::update_board(room.id.clone(), new_board.clone());
         BoardTemplate {
             id: room.id,
             board: new_board,

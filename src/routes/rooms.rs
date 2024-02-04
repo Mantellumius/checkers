@@ -1,12 +1,7 @@
 use askama_axum::IntoResponse;
-use axum::{
-    extract::{Path, Query},
-    routing::get,
-    Router,
-};
+use axum::{extract::Path, routing::get, Router};
 
 use crate::{
-    engine::Board,
     store::Store,
     templates::{BoardTemplate, RoomTemplate},
 };
@@ -21,8 +16,11 @@ impl RoomsRouter {
     pub async fn get_room(Path(id): Path<String>) -> impl IntoResponse {
         let room = Store::get_room(id).unwrap();
         RoomTemplate {
-            title: room.name,
-            board: BoardTemplate { board: room.board, id: room.id.clone() },
+            title: room.id.clone(),
+            board: BoardTemplate {
+                board: room.board,
+                id: room.id.clone(),
+            },
             id: room.id.clone(),
         }
     }

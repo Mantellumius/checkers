@@ -15,6 +15,14 @@ impl Cell {
     pub fn is_empty(&self) -> bool {
         matches!(self, Cell::Empty)
     }
+
+    pub fn is_checker(&self) -> bool {
+        matches!(self, Cell::Checker(_))
+    }
+
+    pub fn is_move(&self) -> bool {
+        matches!(self, Cell::Move)
+    }
 }
 
 impl Display for Cell {
@@ -24,11 +32,5 @@ impl Display for Cell {
             Cell::Move => write!(f, "M"),
             Cell::Checker(checker) => write!(f, "{:?}", checker),
         }
-    }
-}
-
-impl Default for Cell {
-    fn default() -> Self {
-        Cell::Empty
     }
 }

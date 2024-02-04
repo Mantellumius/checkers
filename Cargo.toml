@@ -14,6 +14,8 @@ serde_json = "1.0.113"
 tokio = { version = "1.35.1", features = ["full"] }
 askama_axum = "0.4.0"
 tower-http = { version = "0.5.0", features = ["fs", "trace"] }
+tracing-subscriber = "0.3.18"
+tracing = "0.1.40"
 
 [build]
 rustflags = ["-Z", "threads=8"]

@@ -1,17 +1,23 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
-use super::{Cell, Checker};
+use crate::utility::Point;
+
+use super::{Cell, Checker, Turn};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Board {
     pub cells: [[Cell; 8]; 8],
+    pub turn: Turn,
+    pub selected_cell: Option<Point>,
 }
 
 impl Default for Board {
     fn default() -> Self {
         Self {
             cells: [[Cell::Empty; 8]; 8],
+            turn: Turn::White,
+            selected_cell: None,
         }
     }
 }
@@ -32,46 +38,111 @@ impl Board {
         }
         board
     }
-
-    fn get_cell(&self, x: usize, y: usize) -> &Cell {
-        &self.cells[y][x]
+    
+    pub fn is_selected(&self, x: &usize, y: &usize) -> bool {
+        self.selected_cell.map_or(false, |selected| selected.x == *x && selected.y == *y)
     }
 
-    fn set_cell(&mut self, x: usize, y: usize, cell: Cell) {
-        self.cells[y][x] = cell;
+    pub fn iter(&self) -> BoardIterator {
+        BoardIterator {
+            board: self,
+            x: 0,
+            y: 0,
+        }
     }
 
-    fn get_empty_neighbour_cells(&self, x: usize, y: usize) -> Vec<(usize, usize)> {
-        self.get_neighbour_cells(x, y)
+    pub fn with_legal_moves(&self, point: Point) -> Self {
+        let mut new_board = self.clear_moves();
+        let neighbours = new_board.get_empty_neighbour_cells(point);
+        neighbours
             .into_iter()
-            .filter(|n| self.get_cell(n.0, n.1).is_empty())
+            .for_each(|point| new_board.set_cell(point, Cell::Move));
+        new_board.selected_cell = Some(point);
+        new_board
+    }
+
+    pub fn make_move(&self, target: Point) -> Self {
+        let mut new_board = self.clear_moves();
+        match self.selected_cell {
+            None => new_board,
+            Some(point) => {
+                let cell = *new_board.get_cell(point);
+                new_board.set_cell(point, Cell::Empty);
+                new_board.set_cell(target, cell);
+                new_board.selected_cell = None;
+                new_board.turn = new_board.turn.next();
+                new_board
+            }
+        }
+    }
+
+    fn set_cell(&mut self, target: Point, cell: Cell) {
+        self.cells[target.y][target.x] = cell;
+    }
+
+    fn get_cell(&self, point: Point) -> &Cell {
+        &self.cells[point.y][point.x]
+    }
+
+    fn get_empty_neighbour_cells(&self, point: Point) -> Vec<Point> {
+        self.get_neighbour_cells(point)
+            .into_iter()
+            .filter(|point| self.get_cell(*point).is_empty())
             .collect()
     }
 
-    fn get_neighbour_cells(&self, x: usize, y: usize) -> Vec<(usize, usize)> {
+    fn clear_moves(&self) -> Board {
+        let mut new_board = self.clone();
+        self.iter()
+            .filter(|(.., cell)| cell.is_move())
+            .for_each(|(point, ..)| {
+                new_board.set_cell(point, Cell::Empty);
+            });
+        new_board
+    }
+
+    fn get_neighbour_cells(&self, point: Point) -> Vec<Point> {
         let mut neighbours = vec![];
+        let Point { x, y } = point;
         if y > 0 && x > 0 {
-            neighbours.push((x - 1, y - 1));
+            neighbours.push(Point { x: x - 1, y: y - 1 });
         }
         if y < 7 && x > 0 {
-            neighbours.push((x - 1, y + 1));
+            neighbours.push(Point { x: x - 1, y: y + 1 });
         }
         if y > 0 && x < 7 {
-            neighbours.push((x + 1, y - 1));
+            neighbours.push(Point { x: x + 1, y: y - 1 });
         }
         if y < 7 && x < 7 {
-            neighbours.push((x + 1, y + 1));
+            neighbours.push(Point { x: x + 1, y: y + 1 });
         }
         neighbours
     }
+}
 
-    pub fn with_legal_moves(&self, x: usize, y: usize) -> Self {
-        let mut new_board = self.clone();
-        let neighbours = new_board.get_empty_neighbour_cells(x, y);
-        neighbours
-            .into_iter()
-            .for_each(|(x, y)| new_board.set_cell(x, y, Cell::Move));
-        new_board
+pub struct BoardIterator<'a> {
+    board: &'a Board,
+    x: usize,
+    y: usize,
+}
+
+impl<'a> Iterator for BoardIterator<'a> {
+    type Item = (Point, &'a Cell);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.x += 1;
+        if self.x == 8 {
+            self.x = 0;
+            self.y += 1;
+        }
+        if self.y == 8 {
+            return None;
+        }
+        let point = Point {
+            x: self.x,
+            y: self.y,
+        };
+        Some((point, self.board.get_cell(point)))
     }
 }
 
