@@ -23,17 +23,31 @@
                     </div>
                 </button>
                 {% when crate::Cell::Checker with (crate::Checker::BlackQueen) %}
-                <span>
-                    Black Queen
-                </span>
+                <button hx-get="/games/{{id}}/moves?x={{loop.index0}}&y={{outer_loop_index}}" hx-trigger="click"
+                    hx-target="#board" class="grid place-items-center w-full h-full" {% if board.turn.is_white()
+                    %}disabled{% endif %}>
+                    <div class="bg-[#1f1a17] rounded-full w-2/3 h-2/3 border-[#1f1a17] flex justify-center items-center">
+                        <div class="w-1/3 h-1/3 rounded-full bg-[#eee427]">
+
+                        </div>
+                    </div>
+                </button>
                 {% when crate::Cell::Checker with (crate::Checker::WhiteQueen) %}
-                <span>
-                    White Queen
-                </span>
+                <button hx-get="/games/{{id}}/moves?x={{loop.index0}}&y={{outer_loop_index}}" hx-trigger="click"
+                    hx-target="#board" class="grid place-items-center w-full h-full" {% if board.turn.is_black()
+                    %}disabled{% endif %}>
+                    <div
+                        class="bg-[#edecec] rounded-full w-2/3 h-2/3 border-2 border-[#1f1a17] grid place-items-center">
+                        <div class="w-1/3 h-1/3 rounded-full bg-[#eee427]">
+
+                        </div>
+                    </div>
+                </button>
                 {% when crate::Cell::Move %}
                 <button hx-post="/games/{{id}}/make_move?x={{loop.index0}}&y={{outer_loop_index}}" hx-trigger="click"
                     hx-target="#board" class="grid place-items-center w-full h-full group hover:bg-[#77834c]">
-                    <div class="w-1/3 h-1/3 rounded-full bg-[#77834c] group-hover:bg-transparent">
+                    <div class="w-1/3 h-1/3 rounded-full bg-[#77834c] group-hover:bg-transparent ">
+
                     </div>
                 </button>
                 {% when crate::Cell::Capture %}

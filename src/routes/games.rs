@@ -27,12 +27,11 @@ impl GamesRouter {
         let room = Store::get_room(id).unwrap();
         let x = query.remove("x").unwrap();
         let y = query.remove("y").unwrap();
-        // let new_board = room.board.with_captures(Point { x, y });
-        let new_board = room.board.with_legal_moves(Point { x, y });
-        Store::update_board(room.id.clone(), new_board.clone());
+        let board = room.board.with_legal_moves(Point { x, y });
+        Store::update_board(room.id.clone(), board.clone());
         BoardTemplate {
             id: room.id,
-            board: new_board,
+            board,
         }
     }
 
@@ -43,11 +42,11 @@ impl GamesRouter {
         let room = Store::get_room(id).unwrap();
         let x = query.remove("x").unwrap();
         let y = query.remove("y").unwrap();
-        let new_board = room.board.make_move(Point { x, y });
-        Store::update_board(room.id.clone(), new_board.clone());
+        let board = room.board.make_move(Point { x, y });
+        Store::update_board(room.id.clone(), board.clone());
         BoardTemplate {
             id: room.id,
-            board: new_board,
+            board,
         }
     }
 }

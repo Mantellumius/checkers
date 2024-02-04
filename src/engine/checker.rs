@@ -31,6 +31,10 @@ impl Checker {
             _ => *self,
         }
     }
+
+    pub fn is_queen(&self) -> bool {
+        matches!(self, Checker::WhiteQueen | Checker::BlackQueen)
+    }
 }
 
 impl Display for Checker {

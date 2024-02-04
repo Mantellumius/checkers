@@ -31,6 +31,20 @@ impl Cell {
             _ => false,
         }
     }
+    
+    pub fn promote(&self) -> Self {
+        if let Cell::Checker(checker) = self {
+            return Cell::Checker(checker.promote());
+        }
+        *self
+    }
+    
+    pub fn is_queen(&self) -> bool {
+        match self {
+            Cell::Checker(checker) => checker.is_queen(),
+            _ => false,
+        }
+    }
 }
 
 impl Display for Cell {

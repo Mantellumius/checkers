@@ -54,11 +54,11 @@ impl Board {
     }
 
     pub fn with_legal_moves(&self, point: Point) -> Self {
-        let mut new_board = self.clear_moves();
-        let cell = *new_board.get_cell(point);
-        new_board.selected_cell = Some(point);
+        let mut board = self.clear_moves();
+        let cell = *board.get_cell(point);
+        board.selected_cell = Some(point);
 
-        new_board
+        board
             .get_empty_neighbours(point)
             .into_iter()
             .filter(|neighbor_point| match cell {
@@ -68,8 +68,8 @@ impl Board {
                 Cell::Checker(Checker::WhiteQueen) => true,
                 _ => false,
             })
-            .for_each(|point| new_board.set_cell(point, Cell::Move));
-        new_board
+            .for_each(|point| board.set_cell(point, Cell::Move));
+        board
             .get_captures(point)
             .into_iter()
             .map(|route| route.get_after_last())
@@ -77,37 +77,37 @@ impl Board {
             .for_each(|route| {
                 route
                     .iter()
-                    .for_each(|point| new_board.set_cell(*point, Cell::Move));
-                new_board.set_cell(*route.last().unwrap(), Cell::Capture);
+                    .for_each(|point| board.set_cell(*point, Cell::Move));
+                board.set_cell(*route.last().unwrap(), Cell::Capture);
             });
-        new_board
+        board
     }
 
     pub fn make_move(&self, target: Point) -> Self {
-        dbg!(self.selected_cell);
         let target_cell = *self.get_cell(target);
-        let mut new_board = self.clear_moves();
-        if let Some(point) = self.selected_cell {
-            let cell = *new_board.get_cell(point);
+        let mut board = self.clear_moves();
+        if let Some(start) = self.selected_cell {
+            let cell = *board.get_cell(start);
             match target_cell {
                 Cell::Move => {
-                    new_board.set_cell(point, Cell::Empty);
-                    new_board.set_cell(target, cell);
+                    board.set_cell(start, Cell::Empty);
+                    board.set_cell(target, cell);
+                    board.check_promotion(target);
                 }
-                Cell::Capture => new_board = new_board.capture(target),
+                Cell::Capture => board = board.capture(target),
                 _ => {}
             }
-            new_board.turn = new_board.turn.next();
-            new_board.selected_cell = None;
+            board.turn = board.turn.next();
+            board.selected_cell = None;
         }
-        new_board
+        board
     }
 
     fn capture(&self, target: Point) -> Self {
-        let mut new_board = self.clone();
-        if let Some(selected_cell) = new_board.selected_cell {
-            let cell = *new_board.get_cell(selected_cell);
-            new_board
+        let mut board = self.clone();
+        if let Some(selected_cell) = board.selected_cell {
+            let cell = *board.get_cell(selected_cell);
+            board
                 .get_captures(selected_cell)
                 .into_iter()
                 .find(|route| *route.last().unwrap() == target)
@@ -115,24 +115,32 @@ impl Board {
                 .iter()
                 .reduce(|prev, curr| {
                     let delta = curr.subtract(prev).divide(2);
-                    new_board.set_cell(*prev, Cell::Empty);
-                    new_board.set_cell(prev.add(&delta), Cell::Empty);
-                    new_board.set_cell(*curr, cell);
+                    board.set_cell(*prev, Cell::Empty);
+                    board.set_cell(prev.add(&delta), Cell::Empty);
+                    board.set_cell(*curr, cell);
+                    board.check_promotion(*curr);
                     curr
                 });
         }
-        new_board
+        board
+    }
+
+    fn check_promotion(&mut self, point: Point) {
+        let cell = *self.get_cell(point);
+        if !cell.is_queen() && (point.y == 0 || point.y == 7) {
+            self.set_cell(point, cell.promote());
+        }
     }
 
     fn get_captures(&self, start: Point) -> Vec<Route> {
-        let mut new_board = self.clear_moves();
-        new_board.selected_cell = Some(start);
+        let mut board = self.clear_moves();
+        board.selected_cell = Some(start);
         let mut result = vec![Route {
             points: vec![start],
         }];
         let mut captures = vec![start];
         while let Some(capture_point) = captures.shift() {
-            let valid_captures: Vec<Point> = new_board
+            let valid_captures: Vec<Point> = board
                 .make_move(capture_point)
                 .get_enemy_neighbours(capture_point)
                 .into_iter()
@@ -141,7 +149,7 @@ impl Board {
                     neighbour_point.add(&delta)
                 })
                 .filter(|point_behind_enemy| {
-                    point_behind_enemy.valid() && new_board.get_cell(*point_behind_enemy).is_empty()
+                    point_behind_enemy.valid() && board.get_cell(*point_behind_enemy).is_empty()
                 })
                 .collect();
 
@@ -152,7 +160,7 @@ impl Board {
                 .find_and_remove(|route| *route.last().unwrap() == capture_point)
                 .unwrap();
             valid_captures.into_iter().for_each(|point_behind_enemy| {
-                new_board.set_cell(point_behind_enemy, Cell::Move);
+                board.set_cell(point_behind_enemy, Cell::Move);
                 captures.push(point_behind_enemy);
                 result.push(route.add_point(point_behind_enemy));
             });
@@ -182,11 +190,11 @@ impl Board {
     }
 
     fn clear_moves(&self) -> Board {
-        let mut new_board = self.clone();
+        let mut board = self.clone();
         self.iter()
             .filter(|(.., cell)| cell.is_move())
-            .for_each(|(point, ..)| new_board.set_cell(point, Cell::Empty));
-        new_board
+            .for_each(|(point, ..)| board.set_cell(point, Cell::Empty));
+        board
     }
 
     fn get_neighbours(&self, point: Point) -> impl Iterator<Item = Point> {
