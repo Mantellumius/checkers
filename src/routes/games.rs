@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-
 use askama_axum::IntoResponse;
 use axum::{
     extract::{Path, Query},
@@ -7,7 +6,7 @@ use axum::{
     Router,
 };
 
-use crate::{store::Store, templates::BoardTemplate, utility::Point, Room};
+use crate::{store::Store, templates::BoardTemplate, utility::Point};
 
 pub struct GamesRouter {}
 

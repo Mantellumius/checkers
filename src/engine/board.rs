@@ -38,9 +38,10 @@ impl Board {
         }
         board
     }
-    
+
     pub fn is_selected(&self, x: &usize, y: &usize) -> bool {
-        self.selected_cell.map_or(false, |selected| selected.x == *x && selected.y == *y)
+        self.selected_cell
+            .map_or(false, |selected| selected.x == *x && selected.y == *y)
     }
 
     pub fn iter(&self) -> BoardIterator {
@@ -53,9 +54,17 @@ impl Board {
 
     pub fn with_legal_moves(&self, point: Point) -> Self {
         let mut new_board = self.clear_moves();
-        let neighbours = new_board.get_empty_neighbour_cells(point);
+        let neighbours = new_board.get_empty_neighbours(point);
+        let cell = *new_board.get_cell(point);
         neighbours
             .into_iter()
+            .filter(|neighbor_point| match cell {
+                Cell::Checker(Checker::White) => neighbor_point.y < point.y,
+                Cell::Checker(Checker::Black) => neighbor_point.y > point.y,
+                Cell::Checker(Checker::BlackQueen) => true,
+                Cell::Checker(Checker::WhiteQueen) => true,
+                _ => false,
+            })
             .for_each(|point| new_board.set_cell(point, Cell::Move));
         new_board.selected_cell = Some(point);
         new_board
@@ -84,9 +93,8 @@ impl Board {
         &self.cells[point.y][point.x]
     }
 
-    fn get_empty_neighbour_cells(&self, point: Point) -> Vec<Point> {
-        self.get_neighbour_cells(point)
-            .into_iter()
+    fn get_empty_neighbours(&self, point: Point) -> Vec<Point> {
+        self.get_neighbours(point)
             .filter(|point| self.get_cell(*point).is_empty())
             .collect()
     }
@@ -101,7 +109,7 @@ impl Board {
         new_board
     }
 
-    fn get_neighbour_cells(&self, point: Point) -> Vec<Point> {
+    fn get_neighbours(&self, point: Point) -> impl Iterator<Item = Point> {
         let mut neighbours = vec![];
         let Point { x, y } = point;
         if y > 0 && x > 0 {
@@ -116,7 +124,7 @@ impl Board {
         if y < 7 && x < 7 {
             neighbours.push(Point { x: x + 1, y: y + 1 });
         }
-        neighbours
+        neighbours.into_iter()
     }
 }
 
