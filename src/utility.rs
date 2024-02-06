@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Default)]
 pub struct Point {
     pub x: i8,
     pub y: i8,
@@ -20,13 +20,17 @@ impl Point {
     pub fn add(&self, other: &Point) -> Point {
         Point::new(self.x + other.x, self.y + other.y)
     }
-    
+
     pub fn divide(&self, divider: i8) -> Point {
         Point::new(self.x / divider, self.y / divider)
     }
 
     pub fn valid(&self) -> bool {
         self.x >= 0 && self.y >= 0 && self.x < 8 && self.y < 8
+    }
+
+    pub fn signum(&self) -> Point {
+        Point::new(self.x.signum(), self.y.signum())
     }
 }
 
@@ -67,5 +71,24 @@ impl<T> FindAndRemove<T> for Vec<T> {
             }
             None => None,
         }
+    }
+}
+
+pub trait FindAndRemoveAll<T> {
+    fn find_and_remove_all<P>(&mut self, predicate: P) -> Vec<T>
+    where
+        P: FnMut(&T) -> bool;
+}
+
+impl<T> FindAndRemoveAll<T> for Vec<T> {
+    fn find_and_remove_all<P>(&mut self, mut predicate: P) -> Vec<T>
+    where
+        P: FnMut(&T) -> bool,
+    {
+        let mut result = Vec::new();
+        while let Some(value) = self.find_and_remove(&mut predicate) {
+            result.push(value);
+        }
+        result
     }
 }

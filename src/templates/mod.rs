@@ -26,10 +26,7 @@ impl From<Room> for RoomTemplate {
         RoomTemplate {
             id: value.id.clone(),
             title: value.id.clone(),
-            board: BoardTemplate {
-                board: value.board,
-                id: value.id.clone(),
-            },
+            board: BoardTemplate::from(&value),
         }
     }
 }

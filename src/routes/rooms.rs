@@ -27,11 +27,8 @@ impl RoomsRouter {
     pub async fn get_room(Path(id): Path<String>) -> impl IntoResponse {
         let room = Store::get_room(id).unwrap();
         RoomTemplate {
-            title: room.id.clone(),
-            board: BoardTemplate {
-                board: room.board,
-                id: room.id.clone(),
-            },
+            title: format!("Room {}", room.id.clone()),
+            board: BoardTemplate::from(&room),
             id: room.id.clone(),
         }
     }

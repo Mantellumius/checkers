@@ -4,8 +4,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::Checker;
 
-#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, Default)]
 pub enum Cell {
+    #[default]
     Empty,
     Move,
     Capture,
@@ -27,18 +28,20 @@ impl Cell {
 
     pub fn is_enemy(&self, other_cell: &Cell) -> bool {
         match (self, other_cell) {
-            (Cell::Checker(checker), Cell::Checker(other_checker)) => checker.is_enemy(other_checker),
+            (Cell::Checker(checker), Cell::Checker(other_checker)) => {
+                checker.is_enemy(other_checker)
+            }
             _ => false,
         }
     }
-    
+
     pub fn promote(&self) -> Self {
         if let Cell::Checker(checker) = self {
             return Cell::Checker(checker.promote());
         }
         *self
     }
-    
+
     pub fn is_queen(&self) -> bool {
         match self {
             Cell::Checker(checker) => checker.is_queen(),

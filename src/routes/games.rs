@@ -1,10 +1,6 @@
 use askama_axum::IntoResponse;
-use axum::{
-    extract::{Path, Query},
-    routing::{get, post},
-    Router,
-};
-use std::collections::HashMap;
+use axum::{extract::Path, routing::post, Form, Router};
+use serde::Deserialize;
 
 use crate::{store::Store, templates::BoardTemplate, utility::Point};
 
@@ -15,38 +11,52 @@ impl GamesRouter {
         Router::new().nest(
             "/:id",
             Router::new()
-                .route("/moves", get(Self::get_legal_moves))
+                .route("/moves", post(Self::get_legal_moves))
                 .route("/make_move", post(Self::make_move)),
         )
     }
 
     async fn get_legal_moves(
         Path(id): Path<String>,
-        Query(mut query): Query<HashMap<String, i8>>,
+        Form(body): Form<GetLegalMovesBody>,
     ) -> impl IntoResponse {
         let room = Store::get_room(id).unwrap();
-        let x = query.remove("x").unwrap();
-        let y = query.remove("y").unwrap();
-        let board = room.board.with_legal_moves(Point { x, y });
-        Store::update_board(room.id.clone(), board.clone());
+        let from = Point::new(body.from_x, body.from_y);
+        let board = room.board.with_legal_moves(from);
         BoardTemplate {
             id: room.id,
             board,
+            selected_point: Some(from),
         }
     }
 
     async fn make_move(
         Path(id): Path<String>,
-        Query(mut query): Query<HashMap<String, i8>>,
+        Form(body): Form<MakeMoveBody>,
     ) -> impl IntoResponse {
         let room = Store::get_room(id).unwrap();
-        let x = query.remove("x").unwrap();
-        let y = query.remove("y").unwrap();
-        let board = room.board.make_move(Point { x, y });
+        let from = Point::new(body.from_x, body.from_y);
+        let to: Point = Point::new(body.to_x, body.to_y);
+        let board = room.board.make_move(from, to);
         Store::update_board(room.id.clone(), board.clone());
         BoardTemplate {
             id: room.id,
             board,
+            selected_point: None,
         }
     }
+}
+
+#[derive(Deserialize)]
+struct GetLegalMovesBody {
+    from_x: i8,
+    from_y: i8,
+}
+
+#[derive(Deserialize)]
+struct MakeMoveBody {
+    from_x: i8,
+    from_y: i8,
+    to_x: i8,
+    to_y: i8,
 }
