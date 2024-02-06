@@ -6,7 +6,7 @@
         <div class="{% if (loop.index + outer_loop_index) % 2 == 0 %}bg-[#b58863]{% else %}bg-[#f0d9b5]{% endif %} w-16 h-16
         flex items-center justify-center text-green-500"
             hx-vals='{ "from_x": {{loop.index0}}, "from_y": {{outer_loop_index}}, "to_x": {{selected_point.unwrap_or_default().x}}, "to_y": {{selected_point.unwrap_or_default().y}} }'>
-            <div class="w-full h-full relative">
+            <div class="w-full h-full relative {% if self.is_selected(loop.index0, outer_loop_index) %}bg-[#77834c]{% endif %}">
                 {% match cell %}
                 {% when crate::Cell::Checker with (crate::Checker::Black) %}
                 <button hx-post="/games/{{id}}/moves" hx-target="#board" class="grid place-items-center w-full h-full"

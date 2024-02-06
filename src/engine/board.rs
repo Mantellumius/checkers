@@ -99,7 +99,6 @@ impl Board {
         let mut board = self.with_legal_moves(from);
         let to_cell = *board.get_cell(to);
         let from_cell = *board.get_cell(from);
-        dbg!(to_cell);
         match to_cell {
             Cell::Move => {
                 board.set_cell(from, Cell::Empty);
