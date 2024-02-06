@@ -9,7 +9,7 @@
 
 {% block body %}
 <div id="room" class="w-full h-full flex">
-    <div class="flex items-center justify-center w-full h-full">
+    <div id="board-wrapper" class="flex items-center justify-center w-full h-full">
         {{board|safe}}
     </div>
     <div class="flex absolute left-20 top-1/2">
@@ -17,5 +17,11 @@
             Reset
         </button>
     </div>
+    <script>
+        if (new URL(window.location.href).searchParams.get('side') === 'black') {
+            const board = document.getElementById('board-wrapper');
+            board.style = "rotate: 180deg;";
+        }
+    </script>
 </div>
 {% endblock %}

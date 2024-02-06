@@ -8,7 +8,7 @@ use axum::{
 use crate::{
     engine::Board,
     store::Store,
-    templates::{BoardTemplate, RoomTemplate},
+    templates::{BoardTemplate, RoomTemplate, Side},
     Room,
 };
 
@@ -30,6 +30,7 @@ impl RoomsRouter {
             title: format!("Room {}", room.id.clone()),
             board: BoardTemplate::from(&room),
             id: room.id.clone(),
+            side: Side::White,
         }
     }
 
@@ -40,6 +41,11 @@ impl RoomsRouter {
             id: room.id.clone(),
         };
         Store::insert_room(room.id.clone(), new_room.clone());
-        RoomTemplate::from(new_room)
+        RoomTemplate {
+            id: room.id.clone(),
+            title: room.id.clone(),
+            board: BoardTemplate::from(&room),
+            side: Side::White,
+        }
     }
 }
