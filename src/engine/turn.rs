@@ -2,8 +2,9 @@ use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub enum Turn {
+    #[default]
     Black,
     White,
 }
@@ -27,9 +28,13 @@ impl Turn {
 
 impl Display for Turn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            Turn::Black => "Black",
-            Turn::White => "White",
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                Turn::Black => "Black",
+                Turn::White => "White",
+            }
+        )
     }
 }

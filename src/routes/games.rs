@@ -2,7 +2,7 @@ use askama_axum::IntoResponse;
 use axum::{extract::Path, routing::post, Form, Router};
 use serde::Deserialize;
 
-use crate::{store::Store, templates::BoardTemplate, utility::Point};
+use crate::{engine::Engine, store::Store, templates::BoardTemplate, utility::Point};
 
 pub struct GamesRouter {}
 
@@ -22,7 +22,7 @@ impl GamesRouter {
     ) -> impl IntoResponse {
         let room = Store::get_room(id).unwrap();
         let from = Point::new(body.from_x, body.from_y);
-        let board = room.board.with_legal_moves(from);
+        let board = Engine::with_legal_moves(room.board, from);
         BoardTemplate {
             id: room.id,
             board,
@@ -37,7 +37,7 @@ impl GamesRouter {
         let room = Store::get_room(id).unwrap();
         let from = Point::new(body.from_x, body.from_y);
         let to: Point = Point::new(body.to_x, body.to_y);
-        let board = room.board.make_move(from, to);
+        let board = Engine::make_move(room.board, from, to);
         Store::update_board(room.id.clone(), board.clone());
         BoardTemplate {
             id: room.id,
