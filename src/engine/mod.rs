@@ -10,7 +10,7 @@ pub use checker::Checker;
 pub use route::Route;
 pub use turn::Turn;
 
-use crate::utility::{Point, Shift};
+use crate::utility::Point;
 
 pub struct Engine {}
 
@@ -57,39 +57,37 @@ impl Engine {
     }
 
     fn get_captures(board: &Board, start: Point) -> Vec<Route> {
-        let mut board = board.clear_moves();
+        let board = board.clear_moves();
         let mut routes = vec![Route {
             points: vec![start],
         }];
         let mut captures = vec![start];
-        let is_queen = board.get_cell(start).is_queen();
-        while let Some(capture_point) = captures.shift() {
+        while let Some(capture_point) = captures.pop() {
             let route = routes
                 .iter()
                 .find(|route| *route.last().unwrap() == capture_point)
                 .unwrap()
                 .clone();
-            let enemy_neighbours =
-                Engine::get_enemy_neighbours(&Engine::route_capture(&board, &route), capture_point);
+            let simulated_board = Engine::route_capture(&board, &route);
+            let enemy_neighbours = Engine::get_enemy_neighbours(&simulated_board, capture_point);
             let mut valid_captures: Vec<Point> = Vec::new();
             for neighbour_point in enemy_neighbours {
                 let delta = neighbour_point.subtract(&capture_point).signum();
-                if is_queen {
+                if simulated_board.get_cell(capture_point).is_queen() {
                     let mut start = neighbour_point.add(&delta);
-                    while start.valid() && board.get_cell(start).is_empty() {
+                    while start.valid() && simulated_board.get_cell(start).is_empty() {
                         valid_captures.push(start);
                         start = start.add(&delta);
                     }
                 } else {
                     let start = neighbour_point.add(&delta);
-                    if start.valid() && board.get_cell(start).is_empty() {
+                    if start.valid() && simulated_board.get_cell(start).is_empty() {
                         valid_captures.push(start);
                     }
                 }
             }
 
             valid_captures.into_iter().for_each(|point_behind_enemy| {
-                board.set_cell(point_behind_enemy, Cell::Capture);
                 captures.push(point_behind_enemy);
                 routes.push(route.add_point(point_behind_enemy));
             });
