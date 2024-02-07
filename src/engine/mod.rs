@@ -17,8 +17,8 @@ pub struct Engine {}
 impl Engine {
     pub fn make_move(board: Board, from: Point, to: Point) -> Board {
         let mut board = Engine::with_legal_moves(board, from);
-        let to_cell = *board.get_cell(to);
         let from_cell = *board.get_cell(from);
+        let to_cell = *board.get_cell(to);
         match to_cell {
             Cell::Move => {
                 board.set_cell(from, Cell::Empty);

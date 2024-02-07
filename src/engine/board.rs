@@ -37,9 +37,11 @@ impl Board {
 
     pub fn check_promotion(&mut self, point: Point) {
         let cell = self.get_cell(point);
-        if !cell.is_queen() && (point.y == 0 || point.y == 7) {
-            self.set_cell(point, cell.promote());
-        }
+        match (cell, point.y) {
+            (Cell::Checker(Checker::White), 0) => self.set_cell(point, cell.promote()),
+            (Cell::Checker(Checker::Black), 7) => self.set_cell(point, cell.promote()),
+            _ => {}
+        };
     }
 
     pub fn set_cell(&mut self, point: Point, cell: Cell) {
