@@ -25,25 +25,27 @@ impl RoomsRouter {
     }
 
     pub async fn get_room(Path(id): Path<String>) -> impl IntoResponse {
-        let room = Store::get_room(id).unwrap();
+        let room = Store::get_room(&id).unwrap_or(Room {
+            id: id.clone(),
+            board: Board::new(),
+        });
         RoomTemplate {
-            title: format!("Room {}", room.id.clone()),
+            title: format!("Room {}", id.clone()),
             board: BoardTemplate::from(&room),
-            id: room.id.clone(),
+            id: id.clone(),
             side: Side::White,
         }
     }
 
     pub async fn reset_room(Path(id): Path<String>) -> impl IntoResponse {
-        let room = Store::get_room(id).unwrap_or_default();
         let new_room = Room {
             board: Board::new(),
-            id: room.id.clone(),
+            id: id.clone(),
         };
-        Store::insert_room(room.id.clone(), new_room.clone());
+        Store::insert_room(id.clone(), new_room.clone()).unwrap();
         RoomTemplate {
-            id: room.id.clone(),
-            title: room.id.clone(),
+            id: id.clone(),
+            title: id.clone(),
             board: BoardTemplate::from(&new_room),
             side: Side::White,
         }

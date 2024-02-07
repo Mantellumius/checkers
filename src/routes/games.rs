@@ -20,7 +20,7 @@ impl GamesRouter {
         Path(id): Path<String>,
         Form(body): Form<GetLegalMovesBody>,
     ) -> impl IntoResponse {
-        let room = Store::get_room(id).unwrap();
+        let room = Store::get_room(&id).unwrap();
         let from = Point::new(body.from_x, body.from_y);
         let board = Engine::with_legal_moves(room.board, from);
         BoardTemplate {
@@ -34,11 +34,11 @@ impl GamesRouter {
         Path(id): Path<String>,
         Form(body): Form<MakeMoveBody>,
     ) -> impl IntoResponse {
-        let room = Store::get_room(id).unwrap();
+        let room = Store::get_room(&id).unwrap();
         let from = Point::new(body.from_x, body.from_y);
         let to: Point = Point::new(body.to_x, body.to_y);
         let board = Engine::make_move(room.board, from, to);
-        Store::update_board(room.id.clone(), board.clone());
+        Store::update_board(room.id.clone(), board.clone()).unwrap();
         BoardTemplate {
             id: room.id,
             board,

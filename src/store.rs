@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs};
+use std::{collections::HashMap, fs, io};
 
 use crate::{engine::Board, Room};
 
@@ -7,35 +7,33 @@ pub struct Store {}
 const PATH: &str = "data/rooms.json";
 
 impl Store {
-    pub fn get_rooms() -> HashMap<String, Room> {
-        match fs::read_to_string(PATH) {
-            Ok(data) => {
-                serde_json::from_str::<HashMap<String, Room>>(&data).expect("Failed to parse json")
-            }
-            Err(_) => HashMap::new(),
+    pub fn get_rooms() -> io::Result<HashMap<String, Room>> {
+        let json_string = fs::read_to_string(PATH)?;
+        let rooms = serde_json::from_str::<HashMap<String, Room>>(&json_string)?;
+        Ok(rooms)
+    }
+
+    pub fn get_room(id: &String) -> io::Result<Room> {
+        let mut rooms = Self::get_rooms()?;
+        match rooms.remove(id) {
+            Some(room) => Ok(room),
+            None => Err(io::Error::new(io::ErrorKind::NotFound, "Room not found")),
         }
     }
 
-    pub fn get_room(id: String) -> Option<Room> {
-        match fs::read_to_string(PATH) {
-            Ok(data) => serde_json::from_str::<HashMap<String, Room>>(&data)
-                .expect("Failed to parse json")
-                .remove(&id),
-            Err(_) => None,
-        }
-    }
-
-    pub fn insert_room(id: String, room: Room) {
-        let mut rooms = Self::get_rooms();
+    pub fn insert_room(id: String, room: Room) -> io::Result<()> {
+        let mut rooms = Self::get_rooms()?;
         rooms.insert(id, room);
-        fs::write(PATH, serde_json::to_string_pretty(&rooms).unwrap())
-            .expect("Can't write to file");
+        let json_string = serde_json::to_string_pretty(&rooms)?;
+        fs::write(PATH, json_string)?;
+        Ok(())
     }
     
-    pub fn update_board(id: String, board: Board) {
-        let mut rooms = Self::get_rooms();
+    pub fn update_board(id: String, board: Board) -> io::Result<()> {
+        let mut rooms = Self::get_rooms()?;
         rooms.get_mut(&id).unwrap().board = board;
-        fs::write(PATH, serde_json::to_string_pretty(&rooms).unwrap())
-            .expect("Can't write to file");
+        let json_string = serde_json::to_string_pretty(&rooms)?;
+        fs::write(PATH, json_string)?;
+        Ok(())
     }
 }

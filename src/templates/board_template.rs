@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::{engine::Board, utility::Point, Room};
 
 #[derive(Deserialize, Template, Serialize, Default)]
-#[template(path = "components/board.html", print = "code")]
+#[template(path = "components/board.html")]
 pub struct BoardTemplate {
     pub board: Board,
     pub id: String,
