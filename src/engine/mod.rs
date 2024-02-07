@@ -35,12 +35,7 @@ impl Engine {
     pub fn with_legal_moves(board: Board, from: Point) -> Board {
         let mut board = board.clear_moves();
         let cell = *board.get_cell(from);
-        let neighbours = if cell.is_queen() {
-            Engine::get_neighbours_queen(&board, from)
-        } else {
-            Engine::get_neighbours(from)
-        };
-        neighbours
+        Engine::get_neighbours(&board, from)
             .into_iter()
             .filter(|point| board.get_cell(*point).is_empty())
             .filter(|neighbor_point| match cell {
@@ -74,14 +69,8 @@ impl Engine {
                 .find(|route| *route.last().unwrap() == capture_point)
                 .unwrap()
                 .clone();
-            let enemy_neighbours = if is_queen {
-                Engine::get_enemy_neighbours_queen(
-                    &Engine::route_capture(&board, &route),
-                    capture_point,
-                )
-            } else {
-                Engine::get_enemy_neighbours(&Engine::route_capture(&board, &route), capture_point)
-            };
+            let enemy_neighbours =
+                Engine::get_enemy_neighbours(&Engine::route_capture(&board, &route), capture_point);
             let mut valid_captures: Vec<Point> = Vec::new();
             for neighbour_point in enemy_neighbours {
                 let delta = neighbour_point.subtract(&capture_point).signum();
@@ -107,7 +96,7 @@ impl Engine {
         }
         routes
     }
-    
+
     fn capture(board: &Board, from: Point, target: Point) -> Board {
         let route = Engine::get_captures(board, from)
             .into_iter()
@@ -142,59 +131,47 @@ impl Engine {
 
     fn get_enemy_neighbours(board: &Board, point: Point) -> Vec<Point> {
         let cell = board.get_cell(point);
-        Engine::get_neighbours(point)
+        Engine::get_neighbours(board, point)
             .into_iter()
             .filter(|neighbour_point| cell.is_enemy(board.get_cell(*neighbour_point)))
             .collect()
     }
 
-    fn get_enemy_neighbours_queen(board: &Board, point: Point) -> Vec<Point> {
+    fn get_neighbours(board: &Board, point: Point) -> Vec<Point> {
         let cell = board.get_cell(point);
-        Engine::get_neighbours_queen(board, point)
-            .into_iter()
-            .filter(|neighbour_point| cell.is_enemy(board.get_cell(*neighbour_point)))
-            .collect()
-    }
-
-    fn get_neighbours(point: Point) -> Vec<Point> {
-        [
-            Point::new(-1, -1),
-            Point::new(-1, 1),
-            Point::new(1, -1),
-            Point::new(1, 1),
-        ]
-        .into_iter()
-        .map(|delta| delta.add(&point))
-        .filter(|point| point.valid())
-        .collect()
-    }
-
-    fn get_neighbours_queen(board: &Board, point: Point) -> Vec<Point> {
-        let mut result = vec![];
-        let mut points = [point, point, point, point];
-        let mut finished = [false, false, false, false];
         let deltas = [
             Point::new(-1, -1),
             Point::new(-1, 1),
             Point::new(1, -1),
             Point::new(1, 1),
         ];
-        while points.iter().any(|point| point.valid()) {
-            for i in 0..=3 {
-                points[i] = points[i].add(&deltas[i]);
-                if finished[i] || !points[i].valid() {
-                    continue;
-                }
-                if board.get_cell(points[i]).is_empty() {
-                    result.push(points[i]);
-                } else if board.get_cell(points[i]).is_checker() {
-                    result.push(points[i]);
-                    finished[i] = true;
-                } else {
-                    finished[i] = true;
+        if cell.is_queen() {
+            let mut result = vec![];
+            let mut points = [point, point, point, point];
+            let mut finished = [false, false, false, false];
+            while points.iter().any(|point| point.valid()) {
+                for i in 0..=3 {
+                    points[i] = points[i].add(&deltas[i]);
+                    if finished[i] || !points[i].valid() {
+                        continue;
+                    }
+                    if board.get_cell(points[i]).is_empty() {
+                        result.push(points[i]);
+                    } else if board.get_cell(points[i]).is_checker() {
+                        result.push(points[i]);
+                        finished[i] = true;
+                    } else {
+                        finished[i] = true;
+                    }
                 }
             }
+            result
+        } else {
+            deltas
+                .into_iter()
+                .map(|delta| delta.add(&point))
+                .filter(|point| point.valid())
+                .collect()
         }
-        result
     }
 }

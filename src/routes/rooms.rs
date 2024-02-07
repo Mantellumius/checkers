@@ -44,7 +44,7 @@ impl RoomsRouter {
         RoomTemplate {
             id: room.id.clone(),
             title: room.id.clone(),
-            board: BoardTemplate::from(&room),
+            board: BoardTemplate::from(&new_room),
             side: Side::White,
         }
     }

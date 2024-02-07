@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub enum Turn {
     #[default]
-    Black,
     White,
+    Black,
 }
 
 impl Turn {
