@@ -35,7 +35,7 @@ impl RoomsRouter {
     }
 
     pub async fn reset_room(Path(id): Path<String>) -> impl IntoResponse {
-        let room = Store::get_room(id).unwrap();
+        let room = Store::get_room(id).unwrap_or_default();
         let new_room = Room {
             board: Board::new(),
             id: room.id.clone(),

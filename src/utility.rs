@@ -25,10 +25,6 @@ impl Point {
         Point::new(self.x / divider, self.y / divider)
     }
 
-    pub fn valid(&self) -> bool {
-        self.x >= 0 && self.y >= 0 && self.x < 8 && self.y < 8
-    }
-
     pub fn signum(&self) -> Point {
         Point::new(self.x.signum(), self.y.signum())
     }

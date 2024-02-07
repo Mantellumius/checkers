@@ -40,7 +40,7 @@ async fn index() -> impl IntoResponse {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize, Default)]
 pub struct Room {
     id: String,
     board: Board,
