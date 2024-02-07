@@ -32,8 +32,8 @@ impl Display for Turn {
             f,
             "{}",
             match self {
-                Turn::Black => "Black",
-                Turn::White => "White",
+                Turn::Black => "Turn::Black",
+                Turn::White => "Turn::White",
             }
         )
     }

@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
-use std::{fmt::Display, vec};
+use std::fmt::Display;
 
-use super::{Cell, Checker, Route, Turn};
-use crate::utility::{Point, Shift};
+use super::{Cell, Checker, Turn};
+use crate::utility::Point;
 
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct Board {
@@ -36,13 +36,11 @@ impl Board {
     }
 
     pub fn check_promotion(&mut self, point: Point) {
-        let cell = *self.get_cell(point);
+        let cell = self.get_cell(point);
         if !cell.is_queen() && (point.y == 0 || point.y == 7) {
             self.set_cell(point, cell.promote());
         }
     }
-
-    
 
     pub fn set_cell(&mut self, point: Point, cell: Cell) {
         self.cells[point.y as usize][point.x as usize] = cell;
@@ -52,71 +50,14 @@ impl Board {
         &self.cells[point.y as usize][point.x as usize]
     }
 
-    pub fn get_enemy_neighbours(&self, point: Point) -> Vec<Point> {
-        let cell = self.get_cell(point);
-        self.get_neighbours(point)
-            .into_iter()
-            .filter(|neighbour_point| self.get_cell(*neighbour_point).is_enemy(cell))
-            .collect()
-    }
-
-    pub fn get_enemy_neighbours_queen(&self, point: Point) -> Vec<Point> {
-        let cell = self.get_cell(point);
-        self.get_neighbours_queen(point)
-            .into_iter()
-            .filter(|neighbour_point| self.get_cell(*neighbour_point).is_enemy(cell))
-            .collect()
-    }
-
-    pub fn get_neighbours(&self, point: Point) -> Vec<Point> {
-        let deltas = vec![
-            Point::new(-1, -1),
-            Point::new(-1, 1),
-            Point::new(1, -1),
-            Point::new(1, 1),
-        ];
-        deltas
-            .into_iter()
-            .map(|delta| delta.add(&point))
-            .filter(|point| point.valid())
-            .collect()
-    }
-
-    pub fn get_neighbours_queen(&self, point: Point) -> Vec<Point> {
-        let mut result = vec![];
-        let mut points = [point, point, point, point];
-        let mut finished = [false, false, false, false];
-        let deltas = [
-            Point::new(-1, -1),
-            Point::new(-1, 1),
-            Point::new(1, -1),
-            Point::new(1, 1),
-        ];
-        while points.iter().any(|delta| delta.valid()) {
-            for i in 0..=3 {
-                points[i] = points[i].add(&deltas[i]);
-                if finished[i] || !points[i].valid() {
-                    continue;
-                }
-                if self.get_cell(points[i]).is_empty() {
-                    result.push(points[i]);
-                } else if self.get_cell(points[i]).is_checker() {
-                    result.push(points[i]);
-                    finished[i] = true;
-                } else {
-                    finished[i] = true;
-                }
-            }
-        }
-        result
-    }
-
     pub fn clear_moves(&self) -> Board {
-        let mut board = self.clone();
-        self.iter()
-            .filter(|(.., cell)| cell.is_move())
-            .for_each(|(point, ..)| board.set_cell(point, Cell::Empty));
-        board
+        self.iter().filter(|(.., cell)| cell.is_move()).fold(
+            self.clone(),
+            |mut board, (point, ..)| {
+                board.set_cell(point, Cell::Empty);
+                board
+            },
+        )
     }
 }
 

@@ -35,82 +35,32 @@ impl Engine {
     pub fn with_legal_moves(board: Board, from: Point) -> Board {
         let mut board = board.clear_moves();
         let cell = *board.get_cell(from);
-        if cell.is_queen() {
-            let moves: Vec<Point> = board
-                .get_neighbours_queen(from)
-                .into_iter()
-                .filter(|point| board.get_cell(*point).is_empty())
-                .collect();
-            moves
-                .into_iter()
-                .for_each(|point| board.set_cell(point, Cell::Move));
-            Engine::get_captures(&board, from)
-                .into_iter()
-                .map(|route| route.get_after_last())
-                .filter(|route| !route.is_empty())
-                .for_each(|route| board.set_cell(*route.last().unwrap(), Cell::Capture));
+        let neighbours = if cell.is_queen() {
+            Engine::get_neighbours_queen(&board, from)
         } else {
-            let moves: Vec<Point> = board
-                .get_neighbours(from)
-                .into_iter()
-                .filter(|point| board.get_cell(*point).is_empty())
-                .filter(|neighbor_point| match cell {
-                    Cell::Checker(Checker::White) => neighbor_point.y < from.y,
-                    Cell::Checker(Checker::Black) => neighbor_point.y > from.y,
-                    Cell::Checker(Checker::BlackQueen) => true,
-                    Cell::Checker(Checker::WhiteQueen) => true,
-                    _ => false,
-                })
-                .collect();
-            moves
-                .into_iter()
-                .for_each(|point| board.set_cell(point, Cell::Move));
-            Engine::get_captures(&board, from)
-                .into_iter()
-                .map(|route| route.get_after_last())
-                .filter(|route| !route.is_empty())
-                .for_each(|route| board.set_cell(*route.last().unwrap(), Cell::Capture));
-        }
-        board
-    }
-
-    pub fn capture(board: &Board, from: Point, target: Point) -> Board {
-        let mut board = board.clone();
+            Engine::get_neighbours(from)
+        };
+        neighbours
+            .into_iter()
+            .filter(|point| board.get_cell(*point).is_empty())
+            .filter(|neighbor_point| match cell {
+                Cell::Checker(Checker::White) => neighbor_point.y < from.y,
+                Cell::Checker(Checker::Black) => neighbor_point.y > from.y,
+                Cell::Checker(Checker::BlackQueen) => true,
+                Cell::Checker(Checker::WhiteQueen) => true,
+                _ => false,
+            })
+            .collect::<Vec<Point>>()
+            .into_iter()
+            .for_each(|point| board.set_cell(point, Cell::Move));
         Engine::get_captures(&board, from)
             .into_iter()
-            .find(|route| *route.last().unwrap() == target)
-            .unwrap_or_default()
-            .iter()
-            .reduce(|prev, curr| {
-                board = Engine::simple_capture(&board, *prev, *curr);
-                curr
-            });
+            .map(|route| route.get_after_last())
+            .filter(|route| !route.is_empty())
+            .for_each(|route| board.set_cell(*route.last().unwrap(), Cell::Capture));
         board
     }
 
-    fn route_capture(board: &Board, route: &Route) -> Board {
-        let mut board = board.clone();
-        route.iter().reduce(|prev, curr| {
-            board = Engine::simple_capture(&board, *prev, *curr);
-            curr
-        });
-        board
-    }
-
-    fn simple_capture(board: &Board, from: Point, target: Point) -> Board {
-        let mut board = board.clone();
-        let cell = *board.get_cell(from);
-        let delta = target.subtract(&from).signum();
-        board.set_cell(from, Cell::Empty);
-        let mut start = from;
-        while start != target {
-            start = start.add(&delta);
-            board.set_cell(start, Cell::Empty);
-        }
-        board.set_cell(target, cell);
-        board.check_promotion(target);
-        board
-    }
     fn get_captures(board: &Board, start: Point) -> Vec<Route> {
         let mut board = board.clear_moves();
         let mut routes = vec![Route {
@@ -125,9 +75,12 @@ impl Engine {
                 .unwrap()
                 .clone();
             let enemy_neighbours = if is_queen {
-                Engine::route_capture(&board, &route).get_enemy_neighbours_queen(capture_point)
+                Engine::get_enemy_neighbours_queen(
+                    &Engine::route_capture(&board, &route),
+                    capture_point,
+                )
             } else {
-                Engine::route_capture(&board, &route).get_enemy_neighbours(capture_point)
+                Engine::get_enemy_neighbours(&Engine::route_capture(&board, &route), capture_point)
             };
             let mut valid_captures: Vec<Point> = Vec::new();
             for neighbour_point in enemy_neighbours {
@@ -153,5 +106,95 @@ impl Engine {
             });
         }
         routes
+    }
+    
+    fn capture(board: &Board, from: Point, target: Point) -> Board {
+        let route = Engine::get_captures(board, from)
+            .into_iter()
+            .find(|route| *route.last().unwrap() == target)
+            .unwrap_or_default();
+        Engine::route_capture(board, &route)
+    }
+
+    fn route_capture(board: &Board, route: &Route) -> Board {
+        let mut board = board.clone();
+        route.iter().reduce(|prev, curr| {
+            board = Engine::simple_capture(&board, *prev, *curr);
+            curr
+        });
+        board
+    }
+
+    fn simple_capture(board: &Board, from: Point, target: Point) -> Board {
+        let mut board = board.clone();
+        let cell = *board.get_cell(from);
+        let delta = target.subtract(&from).signum();
+        board.set_cell(from, Cell::Empty);
+        let mut start = from;
+        while start != target {
+            start = start.add(&delta);
+            board.set_cell(start, Cell::Empty);
+        }
+        board.set_cell(target, cell);
+        board.check_promotion(target);
+        board
+    }
+
+    fn get_enemy_neighbours(board: &Board, point: Point) -> Vec<Point> {
+        let cell = board.get_cell(point);
+        Engine::get_neighbours(point)
+            .into_iter()
+            .filter(|neighbour_point| cell.is_enemy(board.get_cell(*neighbour_point)))
+            .collect()
+    }
+
+    fn get_enemy_neighbours_queen(board: &Board, point: Point) -> Vec<Point> {
+        let cell = board.get_cell(point);
+        Engine::get_neighbours_queen(board, point)
+            .into_iter()
+            .filter(|neighbour_point| cell.is_enemy(board.get_cell(*neighbour_point)))
+            .collect()
+    }
+
+    fn get_neighbours(point: Point) -> Vec<Point> {
+        [
+            Point::new(-1, -1),
+            Point::new(-1, 1),
+            Point::new(1, -1),
+            Point::new(1, 1),
+        ]
+        .into_iter()
+        .map(|delta| delta.add(&point))
+        .filter(|point| point.valid())
+        .collect()
+    }
+
+    fn get_neighbours_queen(board: &Board, point: Point) -> Vec<Point> {
+        let mut result = vec![];
+        let mut points = [point, point, point, point];
+        let mut finished = [false, false, false, false];
+        let deltas = [
+            Point::new(-1, -1),
+            Point::new(-1, 1),
+            Point::new(1, -1),
+            Point::new(1, 1),
+        ];
+        while points.iter().any(|point| point.valid()) {
+            for i in 0..=3 {
+                points[i] = points[i].add(&deltas[i]);
+                if finished[i] || !points[i].valid() {
+                    continue;
+                }
+                if board.get_cell(points[i]).is_empty() {
+                    result.push(points[i]);
+                } else if board.get_cell(points[i]).is_checker() {
+                    result.push(points[i]);
+                    finished[i] = true;
+                } else {
+                    finished[i] = true;
+                }
+            }
+        }
+        result
     }
 }
