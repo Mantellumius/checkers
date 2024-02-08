@@ -28,7 +28,7 @@ impl Store {
         fs::write(PATH, json_string)?;
         Ok(())
     }
-    
+
     pub fn update_board(id: String, board: Board) -> io::Result<()> {
         let mut rooms = Self::get_rooms()?;
         rooms.get_mut(&id).unwrap().board = board;

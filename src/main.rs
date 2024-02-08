@@ -2,6 +2,7 @@ use axum::{response::IntoResponse, routing::get, Router};
 use engine::Board;
 use serde::{Deserialize, Serialize};
 use std::env;
+use store::Store;
 
 mod engine;
 mod routes;
@@ -11,7 +12,7 @@ mod utility;
 
 pub use engine::{Cell, Checker};
 use routes::{GamesRouter, RoomsRouter};
-use templates::IndexTemplate;
+use templates::{IndexTemplate, RoomHref};
 use tower_http::{services::ServeDir, trace::TraceLayer};
 
 #[tokio::main]
@@ -35,8 +36,18 @@ async fn main() {
 }
 
 async fn index() -> impl IntoResponse {
+    let rooms = Store::get_rooms().unwrap();
+    let mut room_hrefs = rooms
+        .values()
+        .map(|r| RoomHref {
+            id: r.id.clone(),
+            title: format!("Room {}", r.id.clone()),
+        })
+        .collect::<Vec<RoomHref>>();
+    room_hrefs.sort_by_key(|key| key.id.clone());
     IndexTemplate {
         title: "Checkers".to_string(),
+        rooms: room_hrefs,
     }
 }
 

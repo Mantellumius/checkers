@@ -8,4 +8,13 @@
 {% endblock %}
 
 {% block body %}
+<div class="p-4 flex flex-col gap-3">
+    {% for room in rooms%}
+    <div>
+        <a href="/rooms/{{room.id}}" class="border border-black rounded-sm p-1">
+            Enter Room: {{room.id}}
+        </a>
+    </div>
+    {% endfor%}
+</div>
 {% endblock %}

@@ -11,6 +11,7 @@ pub use room_template::RoomTemplate;
 #[template(path = "pages/index.html")]
 pub struct IndexTemplate {
     pub title: String,
+    pub rooms: Vec<RoomHref>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Copy, Default)]
@@ -18,4 +19,10 @@ pub enum Side {
     #[default]
     White,
     Black,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct RoomHref {
+    pub id: String,
+    pub title: String,
 }
