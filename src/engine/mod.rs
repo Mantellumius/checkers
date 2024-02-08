@@ -13,8 +13,6 @@ pub use turn::Turn;
 
 use crate::utility::Point;
 
-use self::constants::BOARD_SIZE;
-
 pub struct Engine {}
 
 impl Engine {
@@ -78,13 +76,17 @@ impl Engine {
                 let delta = neighbour_point.subtract(&capture_point).signum();
                 if simulated_board.get_cell(capture_point).is_queen() {
                     let mut start = neighbour_point.add(&delta);
-                    while Engine::is_valid(&start) && simulated_board.get_cell(start).is_empty() {
+                    while Engine::is_valid(&board, &start)
+                        && simulated_board.get_cell(start).is_empty()
+                    {
                         valid_captures.push(start);
                         start = start.add(&delta);
                     }
                 } else {
                     let start = neighbour_point.add(&delta);
-                    if Engine::is_valid(&start) && simulated_board.get_cell(start).is_empty() {
+                    if Engine::is_valid(&board, &start)
+                        && simulated_board.get_cell(start).is_empty()
+                    {
                         valid_captures.push(start);
                     }
                 }
@@ -150,10 +152,10 @@ impl Engine {
             let mut result = vec![];
             let mut points = [point, point, point, point];
             let mut finished = [false, false, false, false];
-            while points.iter().any(Engine::is_valid) {
+            while points.iter().any(|p| Engine::is_valid(board, p)) {
                 for i in 0..=3 {
                     points[i] = points[i].add(&deltas[i]);
-                    if finished[i] || !Engine::is_valid(&points[i]) {
+                    if finished[i] || !Engine::is_valid(board, &points[i]) {
                         continue;
                     }
                     if board.get_cell(points[i]).is_empty() {
@@ -171,12 +173,12 @@ impl Engine {
             deltas
                 .into_iter()
                 .map(|delta| delta.add(&point))
-                .filter(Engine::is_valid)
+                .filter(|p| Engine::is_valid(board, p))
                 .collect()
         }
     }
 
-    fn is_valid(point: &Point) -> bool {
-        point.x >= 0 && point.x < BOARD_SIZE as i8 && point.y >= 0 && point.y < BOARD_SIZE as i8
+    fn is_valid(board: &Board, point: &Point) -> bool {
+        point.x >= 0 && point.x < board.size as i8 && point.y >= 0 && point.y < board.size as i8
     }
 }

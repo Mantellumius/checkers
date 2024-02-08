@@ -4,19 +4,20 @@ use std::fmt::Display;
 use super::{constants::BOARD_SIZE, Cell, Checker, Turn};
 use crate::utility::Point;
 
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Board {
-    pub cells: [[Cell; BOARD_SIZE]; BOARD_SIZE],
+    pub size: usize,
+    pub cells: Vec<Vec<Cell>>,
     pub turn: Turn,
 }
 
 impl Board {
     pub fn new() -> Self {
         let mut board = Self::default();
-        let black_last_row = BOARD_SIZE / 2 - 1;
-        let white_last_row = BOARD_SIZE / 2;
-        for i in 0..BOARD_SIZE {
-            for j in 0..BOARD_SIZE {
+        let black_last_row = board.size / 2 - 1;
+        let white_last_row = board.size / 2;
+        for i in 0..board.size {
+            for j in 0..board.size {
                 if (i + j) % 2 != 0 {
                     match i {
                         _ if i < black_last_row => {
@@ -43,7 +44,7 @@ impl Board {
 
     pub fn check_promotion(&mut self, point: Point) {
         let cell = self.get_cell(point);
-        let black_promotion_row = (BOARD_SIZE - 1) as i8;
+        let black_promotion_row = (self.size - 1) as i8;
         let white_promotion_row = 0;
         match cell {
             Cell::Checker(Checker::White) if point.y == white_promotion_row => {
@@ -86,11 +87,11 @@ impl<'a> Iterator for BoardIterator<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.x += 1;
-        if self.x == BOARD_SIZE as i8 {
+        if self.x == self.board.size as i8 {
             self.x = 0;
             self.y += 1;
         }
-        if self.y == BOARD_SIZE as i8 {
+        if self.y == self.board.size as i8 {
             return None;
         }
         let point = Point {
@@ -110,5 +111,15 @@ impl Display for Board {
             writeln!(f)?;
         }
         Ok(())
+    }
+}
+
+impl Default for Board {
+    fn default() -> Self {
+        Self {
+            size: BOARD_SIZE,
+            cells: vec![vec![Cell::Empty; BOARD_SIZE]; BOARD_SIZE],
+            turn: Turn::White,
+        }
     }
 }

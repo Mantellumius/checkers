@@ -1,3 +1,4 @@
+use std::io;
 use askama_axum::IntoResponse;
 use axum::{
     extract::Path,
@@ -25,9 +26,17 @@ impl RoomsRouter {
     }
 
     pub async fn get_room(Path(id): Path<String>) -> impl IntoResponse {
-        let room = Store::get_room(&id).unwrap_or(Room {
-            id: id.clone(),
-            board: Board::new(),
+        let room = Store::get_room(&id).unwrap_or_else(|e| {
+            if e.kind() == io::ErrorKind::NotFound {
+                let new_room = Room {
+                    id: id.clone(),
+                    board: Board::new(),
+                };
+                Store::insert_room(id.clone(), new_room.clone()).unwrap();
+                new_room
+            } else {
+                panic!("{:?}", e);
+            }
         });
         RoomTemplate {
             title: format!("Room {}", id.clone()),
