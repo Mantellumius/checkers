@@ -1,8 +1,18 @@
-use axum::{response::IntoResponse, routing::get, Router};
+use askama::Template;
+use axum::{
+    extract::{
+        ws::{self, WebSocket},
+        ConnectInfo, WebSocketUpgrade,
+    },
+    response::IntoResponse,
+    routing::get,
+    Router,
+};
 use engine::Board;
 use serde::{Deserialize, Serialize};
-use std::env;
+use std::{env, net::SocketAddr};
 use store::Store;
+use tracing::Instrument;
 
 mod engine;
 mod routes;
@@ -12,7 +22,7 @@ mod utility;
 
 pub use engine::{Cell, Checker};
 use routes::{GamesRouter, RoomsRouter};
-use templates::{IndexTemplate, RoomHref};
+use templates::{BoardTemplate, IndexTemplate, RoomHref};
 use tower_http::{services::ServeDir, trace::TraceLayer};
 
 #[tokio::main]
@@ -21,6 +31,7 @@ async fn main() {
     let public = ServeDir::new("public");
     let app = Router::new()
         .route("/", get(index))
+        .route("/ws", get(handle_ws))
         .nest("/rooms", RoomsRouter::get())
         .nest("/games", GamesRouter::get())
         .nest_service("/assets", public)
@@ -33,6 +44,28 @@ async fn main() {
         .unwrap();
     println!("Listening on port {port}");
     axum::serve(listener, app).await.unwrap();
+}
+
+async fn handle_ws(
+    ws: WebSocketUpgrade,
+    // ConnectInfo(addr): ConnectInfo<SocketAddr>,
+) -> impl IntoResponse {
+    // println!("{addr} connected.");
+    // finalize the upgrade process by returning upgrade callback.
+    // we can customize the callback by sending additional info such as address.
+    ws.on_upgrade(handle_socket)
+}
+
+async fn handle_socket(mut socket: WebSocket) {
+    let mut interval = tokio::time::interval(std::time::Duration::from_secs(1));
+    loop {
+        let room = Store::get_room(&"1".to_string()).unwrap();
+        let template = BoardTemplate::from(&room);
+        let _ = socket
+            .send(ws::Message::Text(template.render().unwrap()))
+            .await;
+        interval.tick().await;
+    }
 }
 
 async fn index() -> impl IntoResponse {
