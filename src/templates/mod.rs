@@ -3,9 +3,13 @@ use serde::{Deserialize, Serialize};
 
 mod board_template;
 mod room_template;
+mod cells_template;
+mod cell_template;
 
 pub use board_template::BoardTemplate;
 pub use room_template::RoomTemplate;
+pub use cells_template::CellsTemplate;
+pub use cell_template::CellTemplate;
 
 #[derive(Deserialize, Template)]
 #[template(path = "pages/index.html")]

@@ -2,7 +2,7 @@ use askama::Template;
 use axum::{
     extract::{
         ws::{self, WebSocket},
-        ConnectInfo, WebSocketUpgrade,
+        WebSocketUpgrade,
     },
     response::IntoResponse,
     routing::get,
@@ -10,9 +10,8 @@ use axum::{
 };
 use engine::Board;
 use serde::{Deserialize, Serialize};
-use std::{env, net::SocketAddr};
+use std::env;
 use store::Store;
-use tracing::Instrument;
 
 mod engine;
 mod routes;
@@ -22,7 +21,7 @@ mod utility;
 
 pub use engine::{Cell, Checker};
 use routes::{GamesRouter, RoomsRouter};
-use templates::{BoardTemplate, IndexTemplate, RoomHref};
+use templates::{CellsTemplate, IndexTemplate, RoomHref};
 use tower_http::{services::ServeDir, trace::TraceLayer};
 
 #[tokio::main]
@@ -60,7 +59,9 @@ async fn handle_socket(mut socket: WebSocket) {
     let mut interval = tokio::time::interval(std::time::Duration::from_secs(1));
     loop {
         let room = Store::get_room(&"1".to_string()).unwrap();
-        let template = BoardTemplate::from(&room);
+        let template = CellsTemplate {
+            cells: room.board.cells,
+        };
         let _ = socket
             .send(ws::Message::Text(template.render().unwrap()))
             .await;

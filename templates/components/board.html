@@ -1,66 +1,9 @@
 <div id="board" class="flex flex-col w-fit h-fit border-4 border-gray-800" hx-target="this" hx-swap="outerHTML">
-    {% for row in board.cells %}
+    {% for row in cells %}
     <div class=" flex">
         {% set outer_loop_index = loop.index0 %}
         {% for cell in row %}
-        <div class="{% if (loop.index + outer_loop_index) % 2 == 0 %}bg-[#b58863]{% else %}bg-[#f0d9b5]{% endif %} w-16 h-16
-        flex items-center justify-center text-green-500"
-            hx-vals='{ "from_x": {{loop.index0}}, "from_y": {{outer_loop_index}}, "to_x": {{selected_point.unwrap_or_default().x}}, "to_y": {{selected_point.unwrap_or_default().y}} }'>
-            <div
-                class="w-full h-full relative {% if self.is_selected(loop.index0, outer_loop_index) %}bg-[#77834c]{% endif %}">
-                {% match cell %}
-                {% when crate::Cell::Checker with (crate::Checker::Black) %}
-                <button hx-post="/games/{{id}}/moves" class="grid place-items-center w-full h-full" {% if
-                    board.turn.is_white() %}disabled{% endif %}>
-                    <div class="bg-[#1f1a17] rounded-full w-2/3 h-2/3 border-[#1f1a17]">
-                    </div>
-                </button>
-                {% when crate::Cell::Checker with (crate::Checker::White) %}
-                <button hx-post="/games/{{id}}/moves" class="grid place-items-center w-full h-full" {% if
-                    board.turn.is_black() %}disabled{% endif %}>
-                    <div class="bg-[#edecec] rounded-full w-2/3 h-2/3 border-2 border-[#1f1a17]">
-                    </div>
-                </button>
-                {% when crate::Cell::Checker with (crate::Checker::BlackQueen) %}
-                <button hx-post="/games/{{id}}/moves" class="grid place-items-center w-full h-full" {% if
-                    board.turn.is_white() %}disabled{% endif %}>
-                    <div
-                        class="bg-[#1f1a17] rounded-full w-2/3 h-2/3 border-[#1f1a17] flex justify-center items-center">
-                        <div class="w-2/3 h-2/3"
-                            style="background: url('/assets/images/crown.svg') center no-repeat; background-size: contain;">
-                        </div>
-                    </div>
-                </button>
-                {% when crate::Cell::Checker with (crate::Checker::WhiteQueen) %}
-                <button hx-post="/games/{{id}}/moves" class="grid place-items-center w-full h-full" {% if
-                    board.turn.is_black() %}disabled{% endif %}>
-                    <div
-                        class="bg-[#edecec] rounded-full w-2/3 h-2/3 border-2 border-[#1f1a17] grid place-items-center">
-                        <div class="w-2/3 h-2/3"
-                            style="background: url('/assets/images/crown.svg') center no-repeat; background-size: contain;">
-                        </div>
-                    </div>
-                </button>
-                {% when crate::Cell::Move %}
-                <button hx-post="/games/{{id}}/make_move"
-                    onclick="const audio = new Audio('/assets/sounds/Move.mp3'); audio.volume = 0.25; audio.play()"
-                    class="grid place-items-center w-full h-full group hover:bg-[#77834c]"
-                    hx-vals='{ "to_x": {{loop.index0}}, "to_y": {{outer_loop_index}}, "from_x": {{selected_point.unwrap_or_default().x}}, "from_y": {{selected_point.unwrap_or_default().y}} }'>
-                    <div class="w-1/3 h-1/3 rounded-full bg-[#77834c] group-hover:bg-transparent ">
-                    </div>
-                </button>
-                {% when crate::Cell::Capture %}
-                <button hx-post="/games/{{id}}/make_move"
-                    onclick="const audio = new Audio('/assets/sounds/Move.mp3'); audio.volume = 0.25; audio.play()"
-                    class="grid place-items-center w-full h-full group hover:bg-[#77834c]"
-                    hx-vals='{ "to_x": {{loop.index0}}, "to_y": {{outer_loop_index}}, "from_x": {{selected_point.unwrap_or_default().x}}, "from_y": {{selected_point.unwrap_or_default().y}} }'>
-                    <div class="w-1/3 h-1/3 rounded-full bg-[#a8c445] group-hover:bg-transparent">
-                    </div>
-                </button>
-                {% when crate::Cell::Empty %}
-                {% endmatch %}
-            </div>
-        </div>
+        {{ cell|safe }}
         {% endfor%}
     </div>
     {% endfor%}

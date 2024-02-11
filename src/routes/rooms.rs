@@ -40,7 +40,7 @@ impl RoomsRouter {
         });
         RoomTemplate {
             title: format!("Room {}", id.clone()),
-            board: BoardTemplate::from(&room),
+            board: BoardTemplate::new(&room.board, id.clone(), None),
             id: id.clone(),
             side: Side::White,
         }
@@ -55,7 +55,7 @@ impl RoomsRouter {
         RoomTemplate {
             id: id.clone(),
             title: id.clone(),
-            board: BoardTemplate::from(&new_room),
+            board: BoardTemplate::new(&new_room.board, id, None),
             side: Side::White,
         }
     }
