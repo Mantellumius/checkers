@@ -14,14 +14,7 @@ pub struct BoardTemplate {
 }
 
 impl BoardTemplate {
-    pub fn is_selected(&self, x: &usize, y: &usize) -> bool {
-        self.selected_point
-            .map_or(false, |p| p.x == *x as i8 && p.y == *y as i8)
-    }
-
     pub fn new(board: &Board, id: String, selected_point: Option<Point>) -> Self {
-        
-
         let mut cells: Vec<Vec<CellTemplate>> =
             vec![vec![CellTemplate::default(); board.size]; board.size];
         for y in 0..board.size {
@@ -35,7 +28,8 @@ impl BoardTemplate {
                     y,
                     id: id.clone(),
                     turn: board.turn,
-                    is_selected: false,
+                    is_selected: selected_point
+                        .map_or(false, |p| p.x == x as i8 && p.y == y as i8),
                     selected_point,
                 };
             }
