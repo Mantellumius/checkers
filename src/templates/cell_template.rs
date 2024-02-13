@@ -1,7 +1,7 @@
 use askama::Template;
 use serde::{Deserialize, Serialize};
 
-use crate::{engine::Turn, utility::Point, Cell};
+use crate::{engine::Turn, Cell};
 
 #[derive(Deserialize, Template, Serialize, Default, Clone)]
 #[template(path = "components/cell.html")]
@@ -12,5 +12,4 @@ pub struct CellTemplate {
     pub turn: Turn,
     pub id: String,
     pub is_selected: bool,
-    pub selected_point: Option<Point>,
 }

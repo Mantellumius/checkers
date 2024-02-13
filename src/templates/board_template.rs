@@ -17,20 +17,15 @@ impl BoardTemplate {
     pub fn new(board: &Board, id: String, selected_point: Option<Point>) -> Self {
         let mut cells: Vec<Vec<CellTemplate>> =
             vec![vec![CellTemplate::default(); board.size]; board.size];
-        for y in 0..board.size {
-            for x in 0..board.size {
+        for (y, row) in board.cells.iter().enumerate() {
+            for (x, cell) in row.iter().enumerate() {
                 cells[y][x] = CellTemplate {
-                    cell: *board.get_cell(Point {
-                        x: x as i8,
-                        y: y as i8,
-                    }),
+                    cell: *cell,
                     x,
                     y,
                     id: id.clone(),
                     turn: board.turn,
-                    is_selected: selected_point
-                        .map_or(false, |p| p.x == x as i8 && p.y == y as i8),
-                    selected_point,
+                    is_selected: selected_point.map_or(false, |p| p.x == x as i8 && p.y == y as i8),
                 };
             }
         }
