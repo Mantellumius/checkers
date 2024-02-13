@@ -13,7 +13,7 @@
         {{board|safe}}
     </div>
     <div class="flex absolute left-20 top-1/2">
-        <button hx-post="/rooms/{{id}}/reset" hx-target="#room">
+        <button hx-post="/rooms/{{id}}/reset" hx-target="#room" hx-swap="outerHTML">
             Reset
         </button>
     </div>
