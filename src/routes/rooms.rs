@@ -1,22 +1,23 @@
-use std::io;
 use askama_axum::IntoResponse;
 use axum::{
-    extract::Path,
+    extract::{Path, State},
     routing::{get, post},
     Router,
 };
+use std::{io, sync::Arc};
+use tokio::sync::broadcast;
 
 use crate::{
     engine::Board,
     store::Store,
     templates::{BoardTemplate, RoomTemplate, Side},
-    Room,
+    AppState, Room,
 };
 
 pub struct RoomsRouter {}
 
 impl RoomsRouter {
-    pub fn get() -> Router {
+    pub fn get() -> Router<Arc<AppState>> {
         Router::new().nest(
             "/:id",
             Router::new()
@@ -25,7 +26,10 @@ impl RoomsRouter {
         )
     }
 
-    pub async fn get_room(Path(id): Path<String>) -> impl IntoResponse {
+    pub async fn get_room(
+        Path(id): Path<String>,
+        State(state): State<Arc<AppState>>,
+    ) -> impl IntoResponse {
         let room = Store::get_room(&id).unwrap_or_else(|e| {
             if e.kind() == io::ErrorKind::NotFound {
                 let new_room = Room {
@@ -38,6 +42,9 @@ impl RoomsRouter {
                 panic!("{:?}", e);
             }
         });
+        let mut senders = state.rooms.lock().await;
+        let (tx, _rx) = broadcast::channel(100);
+        senders.insert(id.clone(), tx);
         RoomTemplate {
             title: format!("Room {}", id.clone()),
             board: BoardTemplate::new(&room.board, id.clone(), None),

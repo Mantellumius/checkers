@@ -1,8 +1,9 @@
 use axum::{response::IntoResponse, routing::get, Router};
 use engine::Board;
 use serde::{Deserialize, Serialize};
-use std::env;
+use std::{collections::HashMap, env, sync::Arc};
 use store::Store;
+use tokio::sync::{broadcast, Mutex};
 
 mod engine;
 mod routes;
@@ -15,15 +16,23 @@ use routes::{GamesRouter, RoomsRouter, WSRouter};
 use templates::{IndexTemplate, RoomHref};
 use tower_http::{services::ServeDir, trace::TraceLayer};
 
+pub struct AppState {
+    rooms: Mutex<HashMap<String, broadcast::Sender<String>>>,
+}
+
 #[tokio::main]
 async fn main() {
     let port = env::var("PORT").unwrap_or("3000".to_string());
     let public = ServeDir::new("public");
+    let app_state = Arc::new(AppState {
+        rooms: Mutex::new(HashMap::new()),
+    });
     let app = Router::new()
         .route("/", get(index))
         .nest("/ws", WSRouter::get())
         .nest("/rooms", RoomsRouter::get())
         .nest("/games", GamesRouter::get())
+        .with_state(app_state)
         .nest_service("/assets", public)
         .layer(TraceLayer::new_for_http());
     tracing_subscriber::fmt()

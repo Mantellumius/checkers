@@ -1,13 +1,20 @@
+use std::sync::Arc;
+
+use askama::Template;
 use askama_axum::IntoResponse;
-use axum::{extract::Path, routing::post, Form, Router};
+use axum::{
+    extract::{Path, State},
+    routing::post,
+    Form, Router,
+};
 use serde::Deserialize;
 
-use crate::{engine::Engine, store::Store, templates::BoardTemplate, utility::Point};
+use crate::{engine::Engine, store::Store, templates::BoardTemplate, utility::Point, AppState};
 
 pub struct GamesRouter {}
 
 impl GamesRouter {
-    pub fn get() -> Router {
+    pub fn get() -> Router<Arc<AppState>> {
         Router::new().nest(
             "/:id",
             Router::new()
@@ -28,6 +35,7 @@ impl GamesRouter {
 
     async fn make_move(
         Path(id): Path<String>,
+        State(state): State<Arc<AppState>>,
         Form(body): Form<MakeMoveBody>,
     ) -> impl IntoResponse {
         let room = Store::get_room(&id).unwrap();
@@ -35,7 +43,13 @@ impl GamesRouter {
         let to: Point = Point::new(body.to_x, body.to_y);
         let board = Engine::make_move(room.board, from, to);
         Store::update_board(room.id.clone(), board.clone()).unwrap();
-        BoardTemplate::new(&board, room.id, None)
+        let board = BoardTemplate::new(&board, room.id, None);
+        let senders = state.rooms.lock().await;
+        let sender = senders.get(&id).unwrap();
+        if let Err(e) = sender.send(board.render().unwrap()) {
+            println!("Error sending message: {}", e);
+        }
+        board
     }
 }
 
