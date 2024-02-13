@@ -25,8 +25,13 @@ pub struct AppState {
 async fn main() {
     let port = env::var("PORT").unwrap_or("3000".to_string());
     let public = ServeDir::new("public");
+    let mut rooms_senders = HashMap::new();
+    for id in Store::get_rooms().unwrap().keys() {
+        let (tx, _rx) = broadcast::channel(100);
+        rooms_senders.insert(id.clone(), tx);
+    }
     let app_state = Arc::new(AppState {
-        rooms: Mutex::new(HashMap::new()),
+        rooms: Mutex::new(rooms_senders),
     });
     let app = Router::new()
         .route("/", get(index))

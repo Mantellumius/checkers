@@ -8,20 +8,18 @@
 {% endblock %}
 
 {% block body %}
-<main id="room" class="w-full h-full flex" hx-ext="ws" ws-connect="/ws/rooms/{{id}}">
-    <div id="board-wrapper" class="flex items-center justify-center w-full h-full">
-        {{board|safe}}
-    </div>
-    <div class="flex absolute left-20 top-1/2">
+<main id="room" class="w-full h-full flex justify-center items-center gap-4" hx-ext="ws" ws-connect="/ws/rooms/{{id}}">
+    {{board|safe}}
+    <div class="flex">
         <button hx-post="/rooms/{{id}}/reset" hx-target="#room" hx-swap="outerHTML">
             Reset
         </button>
     </div>
-    <script>
-        if (new URL(window.location.href).searchParams.get('side') === 'black') {
-            const board = document.getElementById('board-wrapper');
-            board.style = "rotate: 180deg;";
-        }
-    </script>
 </main>
+<script>
+    if (new URL(window.location.href).searchParams.get('side') === 'black') {
+        const board = document.getElementById('board-wrapper');
+        board.style = "rotate: 180deg;";
+    }
+</script>
 {% endblock %}
