@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, env, sync::Arc};
 use store::Store;
 use tokio::sync::{broadcast, Mutex};
+use tracing::event;
 
 mod engine;
 mod routes;
@@ -13,7 +14,7 @@ mod utility;
 
 pub use engine::{Cell, Checker};
 use routes::{GamesRouter, RoomsRouter, WSRouter};
-use templates::{IndexTemplate, RoomHref};
+use templates::{IndexTemplate, RoomHrefTemplate};
 use tower_http::{services::ServeDir, trace::TraceLayer};
 
 pub struct AppState {
@@ -41,7 +42,7 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{port}"))
         .await
         .unwrap();
-    println!("Listening on port {port}");
+    event!(tracing::Level::INFO, "Listening on port {port}");
     axum::serve(listener, app).await.unwrap();
 }
 
@@ -49,11 +50,11 @@ async fn index() -> impl IntoResponse {
     let rooms = Store::get_rooms().unwrap();
     let mut room_hrefs = rooms
         .values()
-        .map(|r| RoomHref {
+        .map(|r| RoomHrefTemplate {
             id: r.id.clone(),
             title: format!("Room {}", r.id.clone()),
         })
-        .collect::<Vec<RoomHref>>();
+        .collect::<Vec<RoomHrefTemplate>>();
     room_hrefs.sort_by_key(|key| key.id.clone());
     IndexTemplate {
         title: "Checkers".to_string(),

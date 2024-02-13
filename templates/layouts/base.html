@@ -12,11 +12,9 @@
     {% block head %}{% endblock %}
 </head>
 
-<body hx-boost="true">
-    <main class="w-full h-screen">
-        {% block body %}
-        {% endblock %}
-    </main>
+<body hx-boost="true" class="w-full h-screen flex items-center justify-center">
+    {% block body %}
+    {% endblock %}
 </body>
 
 </html>
