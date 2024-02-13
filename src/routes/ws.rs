@@ -9,6 +9,7 @@ use axum::{
     routing::get,
     Router,
 };
+use tracing::event;
 
 use crate::AppState;
 
@@ -37,7 +38,7 @@ impl WSRouter {
                 .send(ws::Message::Text(message))
                 .await
             {
-                eprintln!("Error sending message: {e}");
+                event!(tracing::Level::ERROR, "Error sending message by websocket: {e}");
             }
         }
     }

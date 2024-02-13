@@ -8,6 +8,7 @@ use axum::{
     Form, Router,
 };
 use serde::Deserialize;
+use tracing::event;
 
 use crate::{engine::Engine, store::Store, templates::BoardTemplate, utility::Point, AppState};
 
@@ -47,7 +48,7 @@ impl GamesRouter {
         let senders = state.rooms.lock().await;
         let sender = senders.get(&id).unwrap();
         if let Err(e) = sender.send(board.render().unwrap()) {
-            println!("Error sending message: {}", e);
+            event!(tracing::Level::ERROR, "Broadcasting failed: {e}");
         }
         board
     }
