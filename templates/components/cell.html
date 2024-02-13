@@ -1,49 +1,42 @@
-<div id="{{x}}-{{y}}" class="{% if (x + y) % 2 == 0 %}bg-[#b58863]{% else %}bg-[#f0d9b5]{% endif %} w-16 h-16
-        flex items-center justify-center text-green-500"
-    hx-vals='{ "clicked_x": {{x}}, "clicked_y": {{y}} }'>
-    <div class="w-full h-full relative {% if is_selected %}bg-[#77834c]{% endif %}">
+<div id="{{x}}-{{y}}" class="{% if (x + y) % 2 == 0 %}bg-[#b58863]{% else %}bg-[#f0d9b5]{% endif %} cell"
+    hx-vals='{ "x": {{x}}, "y": {{y}} }'>
+    <div class="{% if is_selected %}bg-[#77834c]{% endif %}">
         {% match cell %}
         {% when crate::Cell::Checker with (crate::Checker::Black) %}
-        <button hx-post="/games/{{id}}/moves" class="grid place-items-center w-full h-full" {% if turn.is_white()
-            %}disabled{% endif %}>
-            <div class="bg-[#1f1a17] rounded-full w-2/3 h-2/3 border-[#1f1a17]">
+        <button hx-post="/games/{{id}}/moves" class="piece" {% if turn.is_white() %}disabled{% endif %}>
+            <div class="bg-[#1f1a17]">
             </div>
         </button>
         {% when crate::Cell::Checker with (crate::Checker::White) %}
-        <button hx-post="/games/{{id}}/moves" class="grid place-items-center w-full h-full" {% if turn.is_black()
-            %}disabled{% endif %}>
-            <div class="bg-[#edecec] rounded-full w-2/3 h-2/3 border-2 border-[#1f1a17]">
+        <button hx-post="/games/{{id}}/moves" class="piece" {% if turn.is_black() %}disabled{% endif %}>
+            <div class="bg-[#edecec]">
             </div>
         </button>
         {% when crate::Cell::Checker with (crate::Checker::BlackQueen) %}
-        <button hx-post="/games/{{id}}/moves" class="grid place-items-center w-full h-full" {% if turn.is_white()
-            %}disabled{% endif %}>
-            <div class="bg-[#1f1a17] rounded-full w-2/3 h-2/3 border-[#1f1a17] flex justify-center items-center">
+        <button hx-post="/games/{{id}}/moves" class="piece" {% if turn.is_white() %}disabled{% endif %}>
+            <div class="bg-[#1f1a17]">
                 <div class="w-2/3 h-2/3"
                     style="background: url('/assets/images/crown.svg') center no-repeat; background-size: contain;">
                 </div>
             </div>
         </button>
         {% when crate::Cell::Checker with (crate::Checker::WhiteQueen) %}
-        <button hx-post="/games/{{id}}/moves" class="grid place-items-center w-full h-full" {% if turn.is_black()
-            %}disabled{% endif %}>
-            <div class="bg-[#edecec] rounded-full w-2/3 h-2/3 border-2 border-[#1f1a17] grid place-items-center">
+        <button hx-post="/games/{{id}}/moves" class="piece" {% if turn.is_black() %}disabled{% endif %}>
+            <div class="bg-[#edecec]">
                 <div class="w-2/3 h-2/3"
                     style="background: url('/assets/images/crown.svg') center no-repeat; background-size: contain;">
                 </div>
             </div>
         </button>
         {% when crate::Cell::Move %}
-        <button hx-post="/games/{{id}}/make_move"
-            onclick="const audio = new Audio('/assets/sounds/Move.mp3'); audio.volume = 0.25; audio.play()"
-            class="grid place-items-center w-full h-full group hover:bg-[#77834c]">
+        <button hx-post="/games/{{id}}/make_move" class="move group hover:bg-[#77834c]"
+            onclick="const audio = new Audio('/assets/sounds/Move.mp3'); audio.volume = 0.25; audio.play()">
             <div class="w-1/3 h-1/3 rounded-full bg-[#77834c] group-hover:bg-transparent ">
             </div>
         </button>
         {% when crate::Cell::Capture %}
-        <button hx-post="/games/{{id}}/make_move"
-            onclick="const audio = new Audio('/assets/sounds/Move.mp3'); audio.volume = 0.25; audio.play()"
-            class="grid place-items-center w-full h-full group hover:bg-[#77834c]">
+        <button hx-post="/games/{{id}}/make_move" class="capture group hover:bg-[#77834c]"
+            onclick="const audio = new Audio('/assets/sounds/Move.mp3'); audio.volume = 0.25; audio.play()">
             <div class="w-1/3 h-1/3 rounded-full bg-[#a8c445] group-hover:bg-transparent">
             </div>
         </button>

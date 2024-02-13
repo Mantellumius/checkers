@@ -28,7 +28,7 @@ impl GamesRouter {
         Form(body): Form<GetLegalMovesBody>,
     ) -> impl IntoResponse {
         let room = Store::get_room(&id).unwrap();
-        let from = Point::new(body.clicked_x, body.clicked_y);
+        let from = Point::new(body.x, body.y);
         let board = Engine::with_legal_moves(room.board, from);
         BoardTemplate::new(&board, room.id, Some(from))
     }
@@ -40,7 +40,7 @@ impl GamesRouter {
     ) -> impl IntoResponse {
         let room = Store::get_room(&id).unwrap();
         let from = Point::new(body.selected_x, body.selected_y);
-        let to: Point = Point::new(body.clicked_x, body.clicked_y);
+        let to: Point = Point::new(body.x, body.y);
         let board = Engine::make_move(room.board, from, to);
         Store::update_board(room.id.clone(), board.clone()).unwrap();
         let board = BoardTemplate::new(&board, room.id, None);
@@ -55,14 +55,14 @@ impl GamesRouter {
 
 #[derive(Deserialize)]
 struct GetLegalMovesBody {
-    clicked_x: i8,
-    clicked_y: i8,
+    x: i8,
+    y: i8,
 }
 
 #[derive(Deserialize)]
 struct MakeMoveBody {
     selected_x: i8,
     selected_y: i8,
-    clicked_x: i8,
-    clicked_y: i8,
+    x: i8,
+    y: i8,
 }
