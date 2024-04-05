@@ -74,21 +74,18 @@ impl Engine {
             let mut valid_captures: Vec<Point> = Vec::new();
             for neighbour_point in enemy_neighbours {
                 let delta = neighbour_point.subtract(&capture_point).signum();
+                let mut start = neighbour_point.add(&delta);
                 if simulated_board.get_cell(capture_point).is_queen() {
-                    let mut start = neighbour_point.add(&delta);
                     while Engine::is_valid(&board, &start)
                         && simulated_board.get_cell(start).is_empty()
                     {
                         valid_captures.push(start);
                         start = start.add(&delta);
                     }
-                } else {
-                    let start = neighbour_point.add(&delta);
-                    if Engine::is_valid(&board, &start)
-                        && simulated_board.get_cell(start).is_empty()
-                    {
-                        valid_captures.push(start);
-                    }
+                } else if Engine::is_valid(&board, &start)
+                    && simulated_board.get_cell(start).is_empty()
+                {
+                    valid_captures.push(start);
                 }
             }
 

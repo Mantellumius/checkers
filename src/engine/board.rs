@@ -44,8 +44,8 @@ impl Board {
 
     pub fn check_promotion(&mut self, point: Point) {
         let cell = self.get_cell(point);
-        let black_promotion_row = (self.size - 1) as i8;
         let white_promotion_row = 0;
+        let black_promotion_row = (self.size - 1) as i8;
         match cell {
             Cell::Checker(Checker::White) if point.y == white_promotion_row => {
                 self.set_cell(point, cell.promote())
